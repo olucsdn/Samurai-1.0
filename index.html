@@ -1,0 +1,3722 @@
+<!DOCTYPE html>
+<!--
+  ========================================================================
+  O CAMINHO DA ESPADA - A JORNADA DO SAMURAI
+  Landing Page Imersiva 3D com Three.js & Estética Sumi-e
+  ------------------------------------------------------------------------
+  NOTA DE EXECUÇÃO:
+  Para carregar a textura local 'samurai.png' sem restrições de CORS do navegador,
+  execute esta página através de um servidor local. Exemplos rápidos:
+    - Usando Node.js:  npx serve .   ou   npx http-server
+    - Usando Python:   python -m http.server 8000
+    - Usando VS Code:  Extensão 'Live Server'
+  ========================================================================
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>O Caminho da Espada | A Jornada do Samurai</title>
+  
+  <!-- Metadados SEO & Open Graph -->
+  <meta name="description" content="Uma jornada 3D imersiva e contemplativa sobre o espírito, a filosofia e o caminho dos samurais no Japão feudal. Role para caminhar com o guerreiro.">
+  <meta name="theme-color" content="#F4F1EC">
+  <meta property="og:title" content="O Caminho da Espada | A Jornada do Samurai">
+  <meta property="og:description" content="Role para caminhar com o samurai por lagos de lótus, florestas de bambu, templos sagrados e castelos do Japão feudal.">
+  <meta property="og:image" content="./samurai.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="O Caminho da Espada | A Jornada do Samurai">
+  <meta name="twitter:description" content="Uma jornada 3D imersiva e contemplativa através do Bushido e do Japão feudal.">
+  <meta name="twitter:image" content="./samurai.png">
+
+  <!-- Favicon SVG inline (Torii Vermelho) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill='%23C1121F' d='M2 6h28v3h-3v19h-3V9H8v17H5V9H2V6zm4-3h20v2H6V3z'/></svg>">
+
+  <!-- Google Fonts: Shippori Mincho (Títulos, Citações & Ideogramas) + Inter (Corpo) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Three.js r128 & GLTFLoader via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. VARIÁVEIS & RESET CSS
+       ========================================================================== */
+    :root {
+      --bg-paper: #F4F1EC;
+      --bg-paper-translucent: rgba(244, 241, 236, 0.86);
+      --ink-black: #141210;
+      --ink-dark: #2B2521;
+      --mist-gray: #786F64;
+      --mist-light: #DDD2BF;
+      --vermilion: #C1121F;
+      --vermilion-glow: rgba(193, 18, 31, 0.35);
+      --vermilion-dark: #8F0E17;
+      --gold-accent: #C5A059;
+
+      /* Pátina de Papel Antigo Desgastado (Washi Feudal) */
+      --parchment-border: rgba(135, 100, 60, 0.32);
+      --parchment-stain: rgba(150, 115, 70, 0.18);
+      --parchment-burn: rgba(95, 65, 35, 0.26);
+      --parchment-inner-frame: rgba(197, 160, 89, 0.28);
+      
+      --font-heading: 'Shippori Mincho', serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: auto;
+      background-color: var(--bg-paper);
+      color: var(--ink-black);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      word-break: normal;
+      overflow-wrap: break-word;
+      hyphens: manual;
+      -webkit-hyphens: manual;
+    }
+
+    h1, h2, h3, h4, .stage-title, .hero-brush-title, .hero-subtitle, .stage-subtitle, .footer-farewell, .castle-quote {
+      word-break: normal;
+      overflow-wrap: break-word;
+      hyphens: none;
+      -webkit-hyphens: none;
+    }
+
+    .brand-title, .brand-kanji, .stage-number, .era-period, .virtue-name {
+      white-space: nowrap;
+    }
+
+    body {
+      background-color: var(--bg-paper);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Textura sutil de papel washi gerada via SVG inline (zero requisições de arquivos externos) */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.042;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* ==========================================================================
+       2. CURSOR PERSONALIZADO DE NANQUIM (Desktop)
+       ========================================================================== */
+    @media (hover: hover) and (pointer: fine) {
+      body {
+        cursor: none;
+      }
+      a, button, input, [role="button"], .hotspot-card, .virtue-item, .map-node {
+        cursor: none !important;
+      }
+    }
+
+    .custom-cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 10px;
+      background: var(--ink-black);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.22s ease, height 0.22s ease, background-color 0.22s ease;
+    }
+
+    .custom-cursor-follower {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid rgba(26, 26, 26, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width 0.28s ease, height 0.28s ease, border-color 0.28s ease, transform 0.08s ease;
+    }
+
+    body.cursor-hover .custom-cursor {
+      width: 16px;
+      height: 16px;
+      background: var(--vermilion);
+    }
+    body.cursor-hover .custom-cursor-follower {
+      width: 50px;
+      height: 50px;
+      border-color: var(--vermilion);
+      border-width: 2px;
+    }
+
+    /* ==========================================================================
+       3. TELA DE INTRO / CARREGAMENTO SUMI-E
+       ========================================================================== */
+    #intro-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-paper);
+      z-index: 9990;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1.2s var(--ease-out-expo), visibility 1.2s;
+    }
+
+    #intro-screen.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .intro-brush-wrapper {
+      position: relative;
+      width: 280px;
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .intro-brush-svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .brush-path {
+      fill: none;
+      stroke: var(--ink-black);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: drawBrush 1.6s var(--ease-out-expo) forwards;
+    }
+
+    @keyframes drawBrush {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .intro-kanji {
+      font-family: var(--font-heading);
+      font-size: 3.6rem;
+      font-weight: 700;
+      color: var(--ink-black);
+      letter-spacing: 0.15em;
+      opacity: 0;
+      transform: scale(0.92);
+      animation: revealKanji 1s var(--ease-out-expo) 0.6s forwards;
+    }
+
+    @keyframes revealKanji {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Hanko (Selo Vermelho do Samurai) */
+    .hanko-stamp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      border: 2.5px solid var(--vermilion);
+      background: transparent;
+      color: var(--vermilion);
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.95rem;
+      line-height: 1.1;
+      text-align: center;
+      border-radius: 4px;
+      box-shadow: inset 0 0 0 1px rgba(193, 18, 31, 0.25);
+      position: relative;
+      user-select: none;
+    }
+
+    .intro-hanko {
+      margin-top: 1.5rem;
+      opacity: 0;
+      transform: scale(2.6) rotate(-8deg);
+      animation: stampImpact 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.2s forwards;
+    }
+
+    @keyframes stampImpact {
+      to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    .intro-quote {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      font-style: italic;
+      color: var(--mist-gray);
+      letter-spacing: 0.05em;
+      opacity: 0;
+      animation: fadeInText 1s ease 1.5s forwards;
+    }
+
+    .intro-sound-cta {
+      margin-top: 1.3rem;
+      opacity: 0;
+      animation: fadeInText 1s ease 1.8s forwards;
+    }
+
+    .btn-intro-audio {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(26, 26, 26, 0.05);
+      border: 1px solid rgba(135, 100, 60, 0.35);
+      border-radius: 20px;
+      padding: 0.55rem 1.3rem;
+      font-family: var(--font-heading);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ink-black);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(45, 32, 18, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    .btn-intro-audio:hover {
+      background: var(--ink-black);
+      color: #F5EEDB;
+      border-color: var(--ink-black);
+      transform: scale(1.04);
+      box-shadow: 0 6px 16px rgba(20, 18, 16, 0.2);
+    }
+
+    .intro-progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: var(--vermilion);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    @keyframes fadeInText {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* ==========================================================================
+       4. INTERFACE FIXA (HUD / CONTROLES)
+       ========================================================================== */
+    /* Barra de Leitura Superior Vermelha */
+    #top-progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: var(--vermilion);
+      width: 0%;
+      z-index: 500;
+      box-shadow: 0 0 10px var(--vermilion-glow);
+      transition: width 0.05s linear;
+    }
+
+    /* Header Fixo Superior */
+    .top-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.6rem 3.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .brand-mark {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--ink-black);
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+    }
+
+    .brand-kanji {
+      font-size: 0.85rem;
+      color: var(--mist-gray);
+      letter-spacing: 0.2em;
+    }
+
+    .top-controls {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-sound {
+      background: rgba(244, 241, 236, 0.94);
+      border: 1px solid rgba(135, 100, 60, 0.32);
+      border-radius: 22px;
+      padding: 0.5rem 1.05rem;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--ink-black);
+      font-family: var(--font-heading);
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(45, 32, 18, 0.08);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .btn-sound:hover {
+      background: var(--ink-black);
+      color: #F5EEDB;
+      border-color: var(--ink-black);
+      transform: translateY(-1px);
+    }
+
+    .btn-sound.playing {
+      border-color: var(--vermilion);
+      color: var(--vermilion);
+      background: rgba(255, 252, 245, 0.96);
+      box-shadow: 0 0 14px var(--vermilion-glow);
+    }
+
+    .btn-sound.playing:hover {
+      background: var(--vermilion);
+      color: #FFFFFF;
+      border-color: var(--vermilion);
+    }
+
+    /* Barras de equalizador animadas quando tocando */
+    .sound-bars {
+      display: none;
+      align-items: flex-end;
+      gap: 2.5px;
+      height: 14px;
+    }
+
+    .btn-sound.playing .sound-bars {
+      display: flex;
+    }
+
+    .btn-sound.playing #soundIcon {
+      display: none;
+    }
+
+    .sound-bar {
+      width: 2.5px;
+      background: currentColor;
+      border-radius: 1px;
+      height: 100%;
+      transform-origin: bottom;
+    }
+
+    .btn-sound.playing .sound-bar:nth-child(1) {
+      animation: soundBarDance 0.8s ease-in-out infinite alternate;
+    }
+    .btn-sound.playing .sound-bar:nth-child(2) {
+      animation: soundBarDance 1.1s ease-in-out infinite alternate 0.2s;
+    }
+    .btn-sound.playing .sound-bar:nth-child(3) {
+      animation: soundBarDance 0.9s ease-in-out infinite alternate 0.4s;
+    }
+
+    @keyframes soundBarDance {
+      0% { transform: scaleY(0.2); }
+      50% { transform: scaleY(0.95); }
+      100% { transform: scaleY(0.35); }
+    }
+
+    /* Trilho de Progresso Lateral (7 Etapas) */
+    .progress-map {
+      position: fixed;
+      right: 2.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .progress-map::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      width: 1px;
+      background: rgba(26, 26, 26, 0.15);
+      z-index: 0;
+    }
+
+    .progress-map-fill {
+      position: absolute;
+      top: 10px;
+      width: 2px;
+      background: var(--vermilion);
+      z-index: 1;
+      height: 0%;
+      transition: height 0.2s linear;
+    }
+
+    .map-node {
+      position: relative;
+      z-index: 2;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--bg-paper);
+      border: 2px solid var(--mist-gray);
+      transition: all 0.3s var(--ease-out-expo);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .map-node:hover,
+    .map-node.active {
+      background: var(--vermilion);
+      border-color: var(--vermilion);
+      transform: scale(1.4);
+      box-shadow: 0 0 10px var(--vermilion-glow);
+    }
+
+    .map-node-tooltip {
+      position: absolute;
+      right: 26px;
+      background: var(--ink-black);
+      color: var(--bg-paper);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 2px;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      transform: translateX(6px);
+      pointer-events: none;
+      transition: all 0.25s ease;
+      font-family: var(--font-heading);
+    }
+
+    .map-node:hover .map-node-tooltip {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ==========================================================================
+       5. CANVAS 3D & ESTRUTURA DE SCROLL
+       ========================================================================== */
+    #webgl-canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Fallback CSS 3D se WebGL não estiver disponível */
+    #fallback-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      perspective: 1000px;
+      overflow: hidden;
+    }
+
+    .fallback-active #fallback-container {
+      display: block;
+    }
+
+    .fallback-layer-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('./samurai.png');
+      background-size: cover;
+      background-position: center;
+      transform: translateZ(-300px) scale(1.3);
+      filter: contrast(0.95) brightness(1.02);
+      transition: transform 0.1s linear;
+    }
+
+    .fallback-layer-fog {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 30%, var(--bg-paper) 80%);
+      pointer-events: none;
+    }
+
+    .fallback-samurai-svg {
+      position: absolute;
+      bottom: 22%;
+      left: 50%;
+      transform: translate(-50%, 0) translateZ(50px);
+      width: 140px;
+      height: 220px;
+      transition: transform 0.2s ease-out;
+    }
+
+    /* Container de Rolagem da Jornada: ~650vh para cadência meditativa */
+    #scroll-journey-container {
+      position: relative;
+      width: 100%;
+      height: 650vh;
+      z-index: 10;
+    }
+
+    .journey-sections {
+      position: relative;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .journey-stage {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0 4rem;
+      pointer-events: none;
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .stage-content {
+      position: relative;
+      max-width: 620px;
+      pointer-events: auto;
+      background: 
+        radial-gradient(circle at 18% 15%, rgba(255, 252, 244, 0.94) 0%, rgba(246, 239, 227, 0.91) 45%, rgba(238, 226, 206, 0.93) 80%, rgba(225, 209, 184, 0.96) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--parchment-border);
+      border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px;
+      padding: 2.8rem 3.2rem;
+      box-shadow: 
+        0 20px 45px rgba(45, 32, 18, 0.14),
+        0 4px 14px rgba(45, 32, 18, 0.08),
+        inset 0 0 55px var(--parchment-stain),
+        inset 0 0 18px rgba(125, 90, 50, 0.15),
+        inset 0 0 3px var(--parchment-burn);
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo);
+      overflow: hidden;
+    }
+
+    /* Textura de fibras naturais de papel washi envelhecido e desgaste */
+    .stage-content::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.085;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperFibers'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04 0.95' numOctaves='4' result='noise1'/%3E%3CfeTurbulence type='turbulence' baseFrequency='0.08' numOctaves='3' result='noise2'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9' result='contrast'/%3E%3CfeComposite in='noise1' in2='contrast' operator='arithmetic' k1='0.5' k2='0.5' k3='0.1' k4='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperFibers)'/%3E%3C/svg%3E");
+    }
+
+    /* Moldura interna fina tradicional de pergaminho feudal */
+    .stage-content::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid var(--parchment-inner-frame);
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .stage-content > *:not(.kanji-watermark) {
+      position: relative;
+      z-index: 1;
+    }
+
+    .stage-content.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Ideograma gigante translúcido com parallax */
+    .kanji-watermark {
+      position: absolute;
+      top: 50%;
+      right: 1.5rem;
+      transform: translateY(-50%);
+      font-family: var(--font-heading);
+      font-size: 13rem;
+      font-weight: 800;
+      color: #5A4328;
+      opacity: 0.052;
+      user-select: none;
+      pointer-events: none;
+      line-height: 1;
+      z-index: 0;
+      transition: transform 0.3s ease-out;
+    }
+
+    .kanji-watermark.kanji-centered,
+    .quote-box .kanji-watermark {
+      right: auto;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 15rem;
+    }
+
+    .stage-number {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--vermilion);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .stage-number::before {
+      content: "";
+      display: inline-block;
+      width: 22px;
+      height: 2px;
+      background: var(--vermilion);
+    }
+
+    .stage-title {
+      font-family: var(--font-heading);
+      font-size: 2.6rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: #141210;
+      margin-bottom: 0.8rem;
+      letter-spacing: 0.03em;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.45);
+    }
+
+    .stage-subtitle {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #5C5248;
+      margin-bottom: 1.6rem;
+      line-height: 1.5;
+    }
+
+    .stage-text {
+      font-size: 1rem;
+      color: #26221E;
+      line-height: 1.75;
+      margin-bottom: 1.8rem;
+    }
+
+    /* ==========================================================================
+       6. ESTILOS ESPECÍFICOS DE CADA ETAPA
+       ========================================================================== */
+    /* ETAPA 1: HERO (MARGEM DO LAGO) */
+    #stage-hero {
+      justify-content: flex-start;
+      padding-left: clamp(2.5rem, 5vw, 5.5rem);
+      min-height: 100vh;
+    }
+
+    .hero-box {
+      max-width: 660px;
+    }
+
+    .hero-brush-title {
+      font-family: var(--font-heading);
+      font-size: 3.8rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: 0.08em;
+      color: #12100E;
+      margin-bottom: 1.2rem;
+      text-transform: uppercase;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+      word-break: normal;
+      overflow-wrap: break-word;
+      hyphens: none;
+    }
+
+    .hero-brush-title .title-word {
+      display: inline-block;
+      white-space: nowrap;
+      margin-right: 0.3em;
+    }
+
+    .hero-brush-title .title-word:last-child {
+      margin-right: 0;
+    }
+
+    .hero-brush-title .title-letter,
+    .hero-brush-title span {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(4px);
+      animation: letterBrushIn 0.65s var(--ease-out-expo) forwards;
+    }
+
+    @keyframes letterBrushIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      color: var(--mist-gray);
+      margin-bottom: 2rem;
+      letter-spacing: 0.06em;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+    }
+
+    /* Botão com Efeito de Nanquim */
+    .btn-ink {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      background: #141210;
+      color: #F5EEDB;
+      padding: 1rem 2.2rem;
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+      border: 1px solid #141210;
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(20, 18, 16, 0.25);
+      transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn-ink::after {
+      content: "";
+      position: absolute;
+      top: var(--ripple-y, 50%);
+      left: var(--ripple-x, 50%);
+      width: 0;
+      height: 0;
+      background: var(--vermilion);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s var(--ease-out-expo), height 0.6s var(--ease-out-expo);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .btn-ink:hover::after {
+      width: 340px;
+      height: 340px;
+    }
+
+    .btn-ink span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .scroll-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.85rem;
+      color: var(--mist-gray);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .scroll-mouse-icon {
+      width: 20px;
+      height: 32px;
+      border: 1.5px solid var(--mist-gray);
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .scroll-mouse-icon::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 6px;
+      background: var(--vermilion);
+      border-radius: 2px;
+      animation: mouseWheel 1.6s infinite ease-in-out;
+    }
+
+    @keyframes mouseWheel {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, 12px);
+      }
+    }
+
+    /* ETAPA 2: FLORESTA DE BAMBU (CRONOLOGIA HISTÓRICA) */
+    #stage-bamboo {
+      justify-content: flex-end;
+      padding-right: clamp(3rem, 6vw, 6.5rem);
+    }
+
+    .timeline-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .timeline-era {
+      position: relative;
+      padding: 0.85rem 1.1rem 0.85rem 1.6rem;
+      border-left: 2px solid rgba(150, 115, 75, 0.35);
+      background: linear-gradient(90deg, rgba(236, 222, 198, 0.40) 0%, rgba(246, 239, 227, 0.08) 100%);
+      border-radius: 0 4px 4px 0;
+      transition: all 0.3s ease;
+    }
+
+    .timeline-era::before {
+      content: "";
+      position: absolute;
+      left: -5.5px;
+      top: 1.25rem;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #F4EEDB;
+      border: 2px solid rgba(145, 115, 75, 0.65);
+      transition: all 0.3s ease;
+      box-shadow: 0 0 4px rgba(45, 32, 18, 0.15);
+    }
+
+    .timeline-era:hover {
+      border-left-color: var(--vermilion);
+      background: linear-gradient(90deg, rgba(232, 214, 186, 0.60) 0%, rgba(246, 239, 227, 0.20) 100%);
+    }
+
+    .timeline-era:hover::before {
+      border-color: var(--vermilion);
+      background: var(--vermilion);
+      transform: scale(1.3);
+      box-shadow: 0 0 8px var(--vermilion-glow);
+    }
+
+    .era-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .era-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #141210;
+    }
+
+    .era-period {
+      font-size: 0.82rem;
+      color: var(--vermilion);
+      font-weight: 600;
+    }
+
+    .era-desc {
+      font-size: 0.9rem;
+      color: #38322C;
+      line-height: 1.5;
+    }
+
+    /* ETAPA 3: AS 7 VIRTUDES DO BUSHIDO & PORTAL TORII */
+    #stage-bushido {
+      justify-content: center;
+      padding: 0 2rem;
+    }
+
+    .bushido-card {
+      max-width: 980px;
+      width: 100%;
+    }
+
+    .virtues-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.1rem;
+      margin-top: 1.5rem;
+    }
+
+    .virtue-item {
+      flex: 1 1 200px;
+      max-width: 215px;
+      background: radial-gradient(circle at 50% 25%, #FAF7EF 0%, #EFE8DA 65%, #E3D7BF 100%);
+      border: 1px solid rgba(145, 115, 75, 0.28);
+      border-radius: 3px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      transition: all 0.35s var(--ease-out-expo);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 4px 12px rgba(45, 32, 18, 0.05),
+        inset 0 0 18px rgba(160, 120, 70, 0.14),
+        inset 0 0 2px rgba(105, 75, 40, 0.22);
+    }
+
+    .virtue-item::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--vermilion);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .virtue-item:hover {
+      transform: translateY(-4px);
+      background: radial-gradient(circle at 50% 25%, #FCFBF7 0%, #F5EFE3 65%, #ECDDC5 100%);
+      border-color: rgba(193, 18, 31, 0.45);
+      box-shadow: 
+        0 12px 26px rgba(45, 32, 18, 0.12),
+        0 0 14px rgba(193, 18, 31, 0.12),
+        inset 0 0 20px rgba(160, 120, 70, 0.18);
+    }
+
+    .virtue-item:hover::before {
+      opacity: 1;
+    }
+
+    .virtue-kanji {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1A1715;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+      transition: color 0.3s ease;
+    }
+
+    .virtue-item:hover .virtue-kanji {
+      color: var(--vermilion);
+    }
+
+    .virtue-name {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1A1715;
+      margin-bottom: 0.2rem;
+    }
+
+    .virtue-meaning {
+      font-size: 0.8rem;
+      color: #5C5248;
+      line-height: 1.45;
+      word-break: normal;
+      overflow-wrap: break-word;
+      hyphens: none;
+    }
+
+    .virtue-meaning strong {
+      display: block;
+      color: #1A1715;
+      margin-bottom: 0.2rem;
+      font-size: 0.85rem;
+    }
+
+    /* ETAPA 4: A KATANA & HOTSPOTS */
+    #stage-katana {
+      justify-content: flex-start;
+      padding-left: clamp(2.5rem, 5vw, 5.5rem);
+    }
+
+    .katana-inspect-box {
+      max-width: 620px;
+    }
+
+    .katana-hotspots-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .hotspot-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.95rem 1.2rem;
+      background: radial-gradient(circle at 25% 50%, #FAF6EE 0%, #EEE5D5 85%, #E5DAC0 100%);
+      border: 1px solid rgba(145, 115, 75, 0.24);
+      border-left: 3.5px solid rgba(145, 125, 100, 0.6);
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 3px 10px rgba(45, 32, 18, 0.04),
+        inset 0 0 16px rgba(160, 125, 75, 0.12);
+    }
+
+    .hotspot-card.active,
+    .hotspot-card:hover {
+      background: radial-gradient(circle at 25% 50%, #FCFBF7 0%, #F5EDE0 85%, #ECDEBF 100%);
+      border-left-color: var(--vermilion);
+      border-color: rgba(193, 18, 31, 0.35);
+      border-left-width: 4px;
+      transform: translateX(6px);
+      box-shadow: 
+        0 8px 22px rgba(45, 32, 18, 0.08),
+        inset 0 0 20px rgba(193, 18, 31, 0.08);
+    }
+
+    .hotspot-icon {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: var(--vermilion);
+      font-size: 1.15rem;
+    }
+
+    .hotspot-details h4 {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      color: #141210;
+      margin-bottom: 0.2rem;
+    }
+
+    .hotspot-details p {
+      font-size: 0.86rem;
+      color: #4A423B;
+      line-height: 1.45;
+    }
+
+    /* ETAPA 5: CASTELO AO ENTARDECER (FRASE CINEMATOGRÁFICA) */
+    #stage-castle {
+      justify-content: center;
+      text-align: center;
+      padding: 0 2rem;
+    }
+
+    .quote-box {
+      max-width: 860px;
+      width: 100%;
+      padding: 3.2rem 3.6rem;
+      text-align: center;
+    }
+
+    .castle-quote {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.55;
+      color: #141210;
+      margin-bottom: 2rem;
+      letter-spacing: 0.04em;
+    }
+
+    .quote-word {
+      display: inline-block;
+      white-space: nowrap;
+      margin-right: 0.28em;
+      opacity: 0.15;
+      transition: opacity 0.5s var(--ease-out-expo), transform 0.5s var(--ease-out-expo);
+      transform: translateY(8px);
+    }
+
+    .quote-word:last-child {
+      margin-right: 0;
+    }
+
+    .quote-word.lit {
+      opacity: 1;
+      transform: translateY(0);
+      color: #141210;
+    }
+
+    .quote-author {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--vermilion);
+      letter-spacing: 0.15em;
+    }
+
+    /* ETAPA 6: DOJO / O DESPERTAR DO AÇO */
+    #stage-dojo {
+      justify-content: flex-end;
+      padding-right: clamp(3rem, 6vw, 6.5rem);
+    }
+
+    .clan-form-box {
+      max-width: 580px;
+    }
+
+    .clan-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-top: 1.4rem;
+    }
+
+    .clan-form .btn-ink {
+      width: 100%;
+    }
+
+    .form-group {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #FAF6ED;
+      border: 1.5px solid rgba(145, 115, 75, 0.32);
+      border-radius: 2px;
+      padding: 1rem 1.4rem;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: #141210;
+      outline: none;
+      box-shadow: inset 0 1px 4px rgba(80, 55, 30, 0.08);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    }
+
+    .form-input::placeholder {
+      color: #8C8072;
+    }
+
+    .form-input:focus {
+      background: #FFFDF9;
+      border-color: var(--vermilion);
+      box-shadow: 
+        0 0 0 3px var(--vermilion-glow),
+        inset 0 1px 3px rgba(80, 55, 30, 0.06);
+    }
+
+    .form-status {
+      font-size: 0.88rem;
+      margin-top: 0.4rem;
+      display: none;
+    }
+
+    .form-status.success {
+      display: block;
+      color: #2b7a3e;
+      font-weight: 500;
+    }
+
+    /* ETAPA 7: RODAPÉ MINIMALISTA */
+    #stage-footer {
+      min-height: 55vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      border-top: 1px solid rgba(135, 100, 60, 0.28);
+      background: radial-gradient(circle at 50% 0%, #F5EEDA 0%, #ECE2CB 70%, #E3D5B9 100%);
+      box-shadow: inset 0 20px 40px rgba(150, 115, 70, 0.12);
+      pointer-events: auto;
+      max-width: 100%;
+      position: relative;
+    }
+
+    .footer-hanko {
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .footer-hanko:hover {
+      transform: scale(1.15) rotate(-4deg);
+    }
+
+    .footer-farewell {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--ink-black);
+      margin-bottom: 0.8rem;
+    }
+
+    .footer-kanji-sub {
+      font-size: 0.95rem;
+      color: var(--mist-gray);
+      letter-spacing: 0.15em;
+      margin-bottom: 1.8rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .footer-links a {
+      color: var(--ink-dark);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--vermilion);
+    }
+
+    .footer-copy {
+      font-size: 0.78rem;
+      color: var(--mist-gray);
+    }
+
+    /* ==========================================================================
+       7. RESPONSIVIDADE & ACESSIBILIDADE
+       ========================================================================== */
+    /* Telas Médias / Laptops Padrão (1280px a 1440px) */
+    @media (max-width: 1366px) {
+      .journey-stage {
+        padding: 0 2.5rem;
+      }
+      #stage-hero,
+      #stage-katana {
+        padding-left: 2rem;
+      }
+      #stage-bamboo,
+      #stage-dojo {
+        padding-right: 4.5rem;
+      }
+      .stage-content {
+        max-width: 550px;
+        padding: 2.4rem 2.6rem;
+      }
+      .bushido-card {
+        max-width: 880px;
+      }
+      .virtue-item {
+        flex: 1 1 180px;
+        max-width: 200px;
+      }
+    }
+
+    /* Adaptação inteligente para laptops e telas de baixa altura vertical (ex: 1366x768, 1440x900) */
+    @media (min-width: 769px) and (max-height: 840px) {
+      .top-header {
+        padding: 0.9rem 2.5rem;
+      }
+      .journey-stage {
+        padding-top: 4.5rem !important;
+        padding-bottom: 2rem !important;
+      }
+      .stage-content {
+        padding: 1.8rem 2.2rem;
+      }
+      .stage-title {
+        font-size: 2.1rem;
+        margin-bottom: 0.4rem;
+      }
+      .stage-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+      }
+      .stage-text {
+        font-size: 0.92rem;
+        margin-bottom: 1.1rem;
+        line-height: 1.55;
+      }
+      .hero-brush-title {
+        font-size: 2.8rem;
+        margin-bottom: 0.8rem;
+      }
+      .timeline-container {
+        gap: 0.75rem;
+      }
+      .timeline-era {
+        padding-left: 1.2rem;
+      }
+      .era-desc {
+        font-size: 0.82rem;
+      }
+      .virtues-grid {
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+      .virtue-item {
+        flex: 1 1 160px;
+        max-width: 185px;
+        padding: 0.85rem 0.75rem;
+      }
+      .virtue-kanji {
+        font-size: 1.85rem;
+        margin-bottom: 0.2rem;
+      }
+      .virtue-meaning {
+        font-size: 0.75rem;
+      }
+      .hotspot-card {
+        padding: 0.65rem 0.9rem;
+        gap: 0.75rem;
+      }
+      .castle-quote {
+        font-size: 1.85rem;
+        margin-bottom: 1.2rem;
+      }
+      .quote-box {
+        padding: 2.2rem 2.6rem;
+      }
+      .clan-form {
+        gap: 0.8rem;
+        margin-top: 1rem;
+      }
+      .form-input {
+        padding: 0.8rem 1.1rem;
+      }
+      .kanji-watermark {
+        font-size: 10rem;
+      }
+    }
+
+    /* Tablets / Desktops Compactos */
+    @media (max-width: 1024px) {
+      .stage-content {
+        max-width: 500px;
+        padding: 2rem 2.2rem;
+      }
+      .hero-brush-title {
+        font-size: 2.8rem;
+      }
+      .progress-map {
+        right: 1.2rem;
+      }
+      .top-header {
+        padding: 1.2rem 2rem;
+      }
+      #stage-hero,
+      #stage-katana {
+        padding-left: 1.5rem;
+      }
+      #stage-bamboo,
+      #stage-dojo {
+        padding-right: 3.5rem;
+      }
+      .virtues-grid {
+        gap: 0.8rem;
+      }
+      .virtue-item {
+        flex: 1 1 160px;
+        max-width: 185px;
+      }
+    }
+
+    /* Smartphones / Telas Pequenas */
+    @media (max-width: 768px) {
+      .top-header {
+        padding: 1rem 1.2rem;
+      }
+      .journey-stage {
+        padding: 0 1.2rem !important;
+        justify-content: center !important;
+        max-width: 100%;
+      }
+      .stage-content {
+        max-width: 100%;
+        padding: 1.8rem 1.5rem;
+      }
+      .hero-brush-title {
+        font-size: 2.2rem;
+      }
+      .hero-subtitle {
+        font-size: 1.05rem;
+      }
+      .stage-title {
+        font-size: 1.9rem;
+      }
+      .castle-quote {
+        font-size: 1.5rem;
+      }
+      .quote-box {
+        padding: 1.8rem 1.5rem;
+      }
+      .virtues-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+      }
+      .virtue-item {
+        max-width: 100%;
+        flex: none;
+      }
+      .progress-map {
+        display: none;
+      }
+      .kanji-watermark {
+        font-size: 8rem;
+        right: 0.5rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cursor Personalizado de Nanquim (Desktop) -->
+  <div class="custom-cursor" id="customCursor"></div>
+  <div class="custom-cursor-follower" id="cursorFollower"></div>
+
+  <!-- Barra de Leitura Superior Vermelha -->
+  <div id="top-progress-bar"></div>
+
+  <!-- Tela de Abertura / Carregamento Sumi-e -->
+  <aside id="intro-screen" aria-label="Carregando experiência">
+    <div class="intro-brush-wrapper">
+      <svg class="intro-brush-svg" viewBox="0 0 280 130">
+        <path class="brush-path" d="M 20 65 Q 95 20, 170 70 T 260 55" />
+      </svg>
+      <div class="intro-kanji">武士道</div>
+    </div>
+    <div class="hanko-stamp intro-hanko">武士<br>精神</div>
+    <p class="intro-quote">"Não tema caminhar devagar, tema apenas ficar parado."</p>
+    <div class="intro-sound-cta">
+      <button class="btn-intro-audio" id="btnIntroAudio" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <span>Entrar com Música</span>
+      </button>
+    </div>
+    <div class="intro-progress-bar" id="introBar"></div>
+  </aside>
+
+  <!-- Header Fixo Superior -->
+  <header class="top-header">
+    <a href="#stage-hero" class="brand-mark" aria-label="Início da jornada">
+      <div class="hanko-stamp" style="width: 34px; height: 34px; font-size: 0.75rem;">侍</div>
+      <div>
+        <div class="brand-title">O CAMINHO DA ESPADA</div>
+        <div class="brand-kanji">武士の道 • BUSHIDO</div>
+      </div>
+    </a>
+    <div class="top-controls">
+      <button class="btn-sound" id="btnSoundToggle" title="Ativar música ambiente japonesa (Flauta Shakuhachi & Koto)" aria-label="Alternar música de fundo">
+        <span class="sound-bars" aria-hidden="true">
+          <span class="sound-bar"></span>
+          <span class="sound-bar"></span>
+          <span class="sound-bar"></span>
+        </span>
+        <svg id="soundIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        <span id="soundBtnText">Música</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Trilho Lateral de Progresso (7 Etapas) -->
+  <nav class="progress-map" aria-label="Mapa da jornada">
+    <div class="progress-map-fill" id="progressMapFill"></div>
+    <a href="#stage-hero" class="map-node active" data-step="0" aria-label="Margem do Lago">
+      <span class="map-node-tooltip">1. Margem do Lago</span>
+    </a>
+    <a href="#stage-bamboo" class="map-node" data-step="1" aria-label="Floresta de Bambu">
+      <span class="map-node-tooltip">2. Floresta de Bambu</span>
+    </a>
+    <a href="#stage-bushido" class="map-node" data-step="2" aria-label="Sete Virtudes">
+      <span class="map-node-tooltip">3. Portal Torii & Virtudes</span>
+    </a>
+    <a href="#stage-katana" class="map-node" data-step="3" aria-label="A Katana">
+      <span class="map-node-tooltip">4. A Alma da Katana</span>
+    </a>
+    <a href="#stage-castle" class="map-node" data-step="4" aria-label="Castelo ao Entardecer">
+      <span class="map-node-tooltip">5. Castelo ao Entardecer</span>
+    </a>
+    <a href="#stage-dojo" class="map-node" data-step="5" aria-label="Clareira do Clã">
+      <span class="map-node-tooltip">6. Entre para o Clã</span>
+    </a>
+    <a href="#stage-footer" class="map-node" data-step="6" aria-label="Despedida">
+      <span class="map-node-tooltip">7. Selo de Honra</span>
+    </a>
+  </nav>
+
+  <!-- Canvas WebGL 3D em Tela Cheia -->
+  <div id="webgl-canvas-container">
+    <canvas id="three-canvas"></canvas>
+  </div>
+
+  <!-- Fallback CSS 3D caso WebGL não esteja disponível -->
+  <div id="fallback-container">
+    <div class="fallback-layer-bg" id="fallbackBg"></div>
+    <div class="fallback-layer-fog"></div>
+    <svg class="fallback-samurai-svg" viewBox="0 0 100 160">
+      <path fill="#1A1A1A" d="M 50 15 L 20 40 L 80 40 Z" />
+      <circle cx="50" cy="48" r="10" fill="#1A1A1A" />
+      <path fill="#2B2826" d="M 35 60 L 65 60 L 75 110 L 25 110 Z" />
+      <path fill="#C1121F" d="M 33 80 L 67 80 L 67 85 L 33 85 Z" />
+      <rect x="28" y="110" width="18" height="45" fill="#1A1A1A" />
+      <rect x="54" y="110" width="18" height="45" fill="#1A1A1A" />
+      <line x1="20" y1="75" x2="85" y2="95" stroke="#C5A059" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- Container de Rolagem da Jornada (650vh) -->
+  <main id="scroll-journey-container">
+    <div class="journey-sections">
+
+      <!-- ETAPA 1: MARGEM DO LAGO (HERO) -->
+      <section class="journey-stage" id="stage-hero">
+        <div class="stage-content hero-box in-view">
+          <div class="kanji-watermark">武士</div>
+          <div class="stage-number">Etapa I • Margem do Lago</div>
+          <h1 class="hero-brush-title" id="heroAnimatedTitle">O CAMINHO DA ESPADA</h1>
+          <p class="hero-subtitle">Role para caminhar com o samurai pela senda milenar</p>
+          <p class="stage-text">
+            Sob a cerejeira ancestral de folhas rubras e à beira das águas serenas do lago, 
+            o guerreiro aguarda em silêncio. Cada passo adiante é uma reflexão entre a vida, 
+            a honra e a transitoriedade de todas as coisas.
+          </p>
+          <div class="hero-actions">
+            <a href="#stage-bamboo" class="btn-ink" id="btnStartJourney">
+              <span>Comece a Jornada</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+              </svg>
+            </a>
+            <div class="scroll-hint">
+              <div class="scroll-mouse-icon"></div>
+              <span>Role para avançar</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETAPA 2: FLORESTA DE BAMBU (QUEM FOI O SAMURAI & CRONOLOGIA) -->
+      <section class="journey-stage" id="stage-bamboo">
+        <div class="stage-content">
+          <div class="kanji-watermark">道</div>
+          <div class="stage-number">Etapa II • Floresta de Bambu</div>
+          <h2 class="stage-title">Quem foi o Samurai</h2>
+          <p class="stage-subtitle">Mais do que guerreiros de armadura, arquitetos da alma e guardiões da ordem</p>
+          <p class="stage-text">
+            O termo <em>Samurai</em> deriva do verbo japonês arcaico <em>saburau</em>, que significa "aquele que serve". 
+            Assim como o bambu se dobra perante a tormenta sem se quebrar, a disciplina forjou uma linhagem 
+            que unia maestria marcial e refinamento poético.
+          </p>
+          <div class="timeline-container">
+            <div class="timeline-era">
+              <div class="era-header">
+                <span class="era-name">Período Heian</span>
+                <span class="era-period">794 – 1185</span>
+              </div>
+              <p class="era-desc">Elite militar aristocrática; cavaleiros armados com arco e flecha (Kyūjutsu) a serviço da corte imperial.</p>
+            </div>
+            <div class="timeline-era">
+              <div class="era-header">
+                <span class="era-name">Xogunato Kamakura</span>
+                <span class="era-period">1185 – 1333</span>
+              </div>
+              <p class="era-desc">Fundação do governo militar de Minamoto no Yoritomo; o código guerreiro torna-se a espinha dorsal política do Japão.</p>
+            </div>
+            <div class="timeline-era">
+              <div class="era-header">
+                <span class="era-name">Era Sengoku</span>
+                <span class="era-period">1467 – 1603</span>
+              </div>
+              <p class="era-desc">O turbilhão dos estados beligerantes; castelos grandiosos, táticas em massa e a ascensão dos três unificadores.</p>
+            </div>
+            <div class="timeline-era">
+              <div class="era-header">
+                <span class="era-name">Paz de Edo</span>
+                <span class="era-period">1603 – 1867</span>
+              </div>
+              <p class="era-desc">Sob os Tokugawa, 250 anos de paz florescem. A espada torna-se símbolo espiritual, e o guerreiro torna-se filósofo e erudito.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETAPA 3: PONTE DE MADEIRA & AS 7 VIRTUDES DO BUSHIDO -->
+      <section class="journey-stage" id="stage-bushido">
+        <div class="stage-content bushido-card">
+          <div class="kanji-watermark">義</div>
+          <div class="stage-number">Etapa III • Ponte & Portal Torii</div>
+          <h2 class="stage-title">As Sete Virtudes do Bushido</h2>
+          <p class="stage-subtitle">O código sagrado que orientava cada decisão, respiração e golpe do guerreiro</p>
+          <div class="virtues-grid">
+            <div class="virtue-item">
+              <div class="virtue-kanji">義</div>
+              <div class="virtue-name">GI (義)</div>
+              <div class="virtue-meaning"><strong>Retidão e Justiça</strong><br>A firmeza inabalável de decidir e agir em retidão moral.</div>
+            </div>
+            <div class="virtue-item">
+              <div class="virtue-kanji">勇</div>
+              <div class="virtue-name">YŪ (勇)</div>
+              <div class="virtue-meaning"><strong>Coragem Heroica</strong><br>Ousar viver com bravura quando a morte ronda os passos.</div>
+            </div>
+            <div class="virtue-item">
+              <div class="virtue-kanji">仁</div>
+              <div class="virtue-name">JIN (仁)</div>
+              <div class="virtue-meaning"><strong>Benevolência</strong><br>O poder supremo que manifesta compaixão e misericórdia aos frágeis.</div>
+            </div>
+            <div class="virtue-item">
+              <div class="virtue-kanji">礼</div>
+              <div class="virtue-name">REI (礼)</div>
+              <div class="virtue-meaning"><strong>Respeito e Cortesia</strong><br>A reverência sincera pela dignidade alheia, mesmo perante o rival.</div>
+            </div>
+            <div class="virtue-item">
+              <div class="virtue-kanji">誠</div>
+              <div class="virtue-name">MAKOTO (誠)</div>
+              <div class="virtue-meaning"><strong>Honestidade Total</strong><br>Dizer é cumprir. Para o samurai, uma promessa é lei viva.</div>
+            </div>
+            <div class="virtue-item">
+              <div class="virtue-kanji">名誉</div>
+              <div class="virtue-name">MEIYO (名誉)</div>
+              <div class="virtue-meaning"><strong>Honra e Dignidade</strong><br>O reflexo puro da consciência; perder a honra é perder a própria vida.</div>
+            </div>
+            <div class="virtue-item">
+              <div class="virtue-kanji">忠義</div>
+              <div class="virtue-name">CHŪGI (忠義)</div>
+              <div class="virtue-meaning"><strong>Lealdade Inabalável</strong><br>Devoção irrestrita à causa justa e àqueles a quem se jurou fidelidade.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETAPA 4: A KATANA - A ALMA DO SAMURAI -->
+      <section class="journey-stage" id="stage-katana">
+        <div class="stage-content katana-inspect-box">
+          <div class="kanji-watermark">刀</div>
+          <div class="stage-number">Etapa IV • Escadaria do Templo</div>
+          <h2 class="stage-title">A Katana</h2>
+          <p class="stage-subtitle">"A espada é a própria alma do guerreiro" — provérbio feudal</p>
+          <p class="stage-text">
+            Forjada pelo fogo e pelas preces dos mestres ferreiros através do lendário aço <em>tamahagane</em>, 
+            a katana representa o ápice da metalurgia mundial. Ao lado, a espada gira em tempo real com seu scroll.
+          </p>
+          <div class="katana-hotspots-list">
+            <div class="hotspot-card active" data-part="tsuka">
+              <div class="hotspot-icon">柄</div>
+              <div class="hotspot-details">
+                <h4>Tsuka (Empunhadura)</h4>
+                <p>Revestida com pele de arraia (samegawa) e trançada com seda pura (tsuka-ito), garante pegada firme e absorção de impacto.</p>
+              </div>
+            </div>
+            <div class="hotspot-card" data-part="tsuba">
+              <div class="hotspot-icon">鍔</div>
+              <div class="hotspot-details">
+                <h4>Tsuba (Guarda da Espada)</h4>
+                <p>Disco de ferro forjado finamente esculpido com motivos da natureza, protegendo a mão contra lâminas adversárias.</p>
+              </div>
+            </div>
+            <div class="hotspot-card" data-part="saya">
+              <div class="hotspot-icon">鞘</div>
+              <div class="hotspot-details">
+                <h4>Saya (Bainha)</h4>
+                <p>Esculpida em madeira de magnólia e revestida por laca urushi tradicional preta, preservando o fio contra intempéries.</p>
+              </div>
+            </div>
+            <div class="hotspot-card" data-part="blade">
+              <div class="hotspot-icon">刃</div>
+              <div class="hotspot-details">
+                <h4>Ha & Hamon (Lâmina e Fio)</h4>
+                <p>Curvatura sori perfeita com a linha hamon ondulada resultante da têmpera diferencial com argila refratária especial.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETAPA 5: CASTELO AO ENTARDECER (FRASE CINEMATOGRÁFICA) -->
+      <section class="journey-stage" id="stage-castle">
+        <div class="stage-content quote-box">
+          <div class="kanji-watermark kanji-centered">城</div>
+          <div class="stage-number" style="justify-content: center;">Etapa V • Mirante do Castelo</div>
+          <blockquote class="castle-quote" id="castleQuoteWords">
+            <!-- Palavras injetadas via JavaScript para acenderem individualmente ao scroll -->
+          </blockquote>
+          <div class="quote-author">— MIYAMOTO MUSASHI, GORIN NO SHO (O LIVRO DOS CINCO ANÉIS)</div>
+        </div>
+      </section>
+
+      <!-- ETAPA 6: DOJO / O DESPERTAR DO AÇO & ENTRE PARA O CLÃ -->
+      <section class="journey-stage" id="stage-dojo">
+        <div class="stage-content clan-form-box">
+          <div class="kanji-watermark">心</div>
+          <div class="stage-number">Etapa VI • A Clareira Sagrada</div>
+          <h2 class="stage-title">Entre para o Clã</h2>
+          <p class="stage-subtitle">O guerreiro desembainha a lâmina perante você. A jornada externa termina; o caminho interior se inicia.</p>
+          <p class="stage-text">
+            Junte-se ao nosso círculo de estudos e receba reflexões periódicas sobre história japonesa, 
+            técnicas clássicas de esgrima, filosofia marcial e traduções de textos raros dos antigos mestres.
+          </p>
+          <form class="clan-form" id="clanForm" onsubmit="return false;">
+            <div class="form-group">
+              <input type="text" class="form-input" id="userName" placeholder="Seu nome ou título de honra" required>
+            </div>
+            <div class="form-group">
+              <input type="email" class="form-input" id="userEmail" placeholder="Seu melhor e-mail" required>
+            </div>
+            <button type="submit" class="btn-ink" id="btnSubmitClan">
+              <span>Prestar Juramento & Entrar</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+            <p class="form-status" id="formStatus">Honra aceita. Suas instruções chegarão com a brisa ao seu correio.</p>
+          </form>
+        </div>
+      </section>
+
+      <!-- ETAPA 7: RODAPÉ MINIMALISTA -->
+      <footer class="journey-stage" id="stage-footer">
+        <div class="hanko-stamp footer-hanko" title="Selo de honra do samurai">武士<br>精神</div>
+        <div class="footer-farewell">"Na calma, encontre o movimento; no movimento, encontre a calma."</div>
+        <div class="footer-kanji-sub">一期一会 • ICHI-GO ICHI-E (UM ENCONTRO, UMA OPORTUNIDADE ÚNICA NA VIDA)</div>
+        <ul class="footer-links">
+          <li><a href="#stage-hero">Retornar ao Lago</a></li>
+          <li><a href="#stage-bamboo">Cronologia</a></li>
+          <li><a href="#stage-bushido">Sete Virtudes</a></li>
+          <li><a href="#stage-katana">A Katana</a></li>
+        </ul>
+        <div class="footer-copy">
+          Projeto conceitual imersivo em Nanquin & 3D. Desenvolvido com Three.js e dedicação à tradição nipônica.
+        </div>
+      </footer>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       8. MOTOR JAVASCRIPT: THREE.JS 3D, SOM, SCROLL & INTERAÇÕES
+       ========================================================================== -->
+  <script>
+    (function() {
+      'use strict';
+
+      /* ------------------------------------------------------------------------
+         CONFIGURAÇÃO & CONSTANTES
+         ------------------------------------------------------------------------ */
+      const CONFIG = {
+        bgColor: 0xF4F1EC,
+        inkColor: 0x1A1A1A,
+        inkLight: 0x333333,
+        grayMist: 0x8A8680,
+        vermilion: 0xC1121F,
+        vermilionDark: 0x8F0E17,
+        gold: 0xC5A059,
+        leafCount: window.innerWidth < 768 ? 140 : 320,
+        bambooCount: window.innerWidth < 768 ? 32 : 64,
+      };
+
+      /* ------------------------------------------------------------------------
+         1. TELA DE INTRODUÇÃO & LOADING
+         ------------------------------------------------------------------------ */
+      const introScreen = document.getElementById('intro-screen');
+      const introBar = document.getElementById('introBar');
+      let introDismissed = false;
+
+      function dismissIntroScreen(andStartAudio = false) {
+        if (introDismissed) return;
+        introDismissed = true;
+        clearInterval(fakeLoading);
+        if (introScreen) introScreen.classList.add('fade-out');
+        triggerHeroTitleAnimation();
+        if (andStartAudio && typeof startSoundtrack === 'function') {
+          startSoundtrack();
+        }
+      }
+
+      let loadProgress = 0;
+      const fakeLoading = setInterval(() => {
+        loadProgress += 18;
+        if (introBar) introBar.style.width = Math.min(loadProgress, 100) + '%';
+        if (loadProgress >= 100) {
+          clearInterval(fakeLoading);
+          setTimeout(() => {
+            dismissIntroScreen(false);
+          }, 600);
+        }
+      }, 110);
+
+      const btnIntroAudio = document.getElementById('btnIntroAudio');
+      if (btnIntroAudio) {
+        btnIntroAudio.addEventListener('click', () => {
+          dismissIntroScreen(true);
+        });
+      }
+
+      function triggerHeroTitleAnimation() {
+        const titleEl = document.getElementById('heroAnimatedTitle');
+        if (!titleEl) return;
+        const text = titleEl.innerText.trim();
+        titleEl.innerHTML = '';
+        let globalCharIdx = 0;
+        const words = text.split(/\s+/);
+        words.forEach((word, wIdx) => {
+          const wordSpan = document.createElement('span');
+          wordSpan.className = 'title-word';
+          word.split('').forEach(char => {
+            const letterSpan = document.createElement('span');
+            letterSpan.className = 'title-letter';
+            letterSpan.textContent = char;
+            letterSpan.style.animationDelay = `${globalCharIdx * 0.045}s`;
+            wordSpan.appendChild(letterSpan);
+            globalCharIdx++;
+          });
+          titleEl.appendChild(wordSpan);
+          if (wIdx < words.length - 1) {
+            titleEl.appendChild(document.createTextNode(' '));
+            globalCharIdx++;
+          }
+        });
+      }
+
+      /* ------------------------------------------------------------------------
+         2. NAVEGAÇÃO SUAVE DE LINKS ÂNCORA
+         ------------------------------------------------------------------------ */
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const targetId = this.getAttribute('href');
+          if (!targetId || targetId === '#') return;
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            e.preventDefault();
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      /* ------------------------------------------------------------------------
+         3. GERENCIADOR DE SCROLL SUAVE (LERP) & NAVEGAÇÃO
+         ------------------------------------------------------------------------ */
+      let targetScrollProgress = 0;
+      let currentScrollProgress = 0;
+      let scrollDirection = 1; // 1 = avançando, -1 = voltando
+      let lastScrollY = window.scrollY;
+
+      const topProgressBar = document.getElementById('top-progress-bar');
+      const progressMapFill = document.getElementById('progressMapFill');
+      const mapNodes = document.querySelectorAll('.map-node');
+      const stageSections = document.querySelectorAll('.journey-stage');
+      const watermarks = document.querySelectorAll('.kanji-watermark');
+
+      function updateScrollMetrics() {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollY = window.scrollY;
+        
+        targetScrollProgress = scrollHeight > 0 ? Math.min(Math.max(scrollY / scrollHeight, 0), 1) : 0;
+        scrollDirection = scrollY >= lastScrollY ? 1 : -1;
+        lastScrollY = scrollY;
+
+        // Barra de progresso do topo
+        if (topProgressBar) {
+          topProgressBar.style.width = (targetScrollProgress * 100) + '%';
+        }
+        if (progressMapFill) {
+          progressMapFill.style.height = (targetScrollProgress * 100) + '%';
+        }
+
+        // Nós do mapa lateral
+        const stepIndex = Math.min(Math.floor(targetScrollProgress * 7), 6);
+        mapNodes.forEach((node, idx) => {
+          node.classList.toggle('active', idx === stepIndex);
+        });
+
+        // Revelar seções
+        stageSections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          const content = section.querySelector('.stage-content');
+          if (content && rect.top < window.innerHeight * 0.78 && rect.bottom > window.innerHeight * 0.22) {
+            content.classList.add('in-view');
+          }
+        });
+
+        // Parallax sutil nos ideogramas gigantes de fundo
+        watermarks.forEach(wm => {
+          const depth = 20;
+          const yOffset = (targetScrollProgress - 0.5) * depth;
+          if (wm.classList.contains('kanji-centered') || wm.closest('.quote-box')) {
+            wm.style.transform = `translate(-50%, calc(-50% + ${yOffset}px))`;
+          } else {
+            wm.style.transform = `translateY(calc(-50% + ${yOffset}px))`;
+          }
+        });
+
+        // Efeito de revelação de palavras na Etapa 5
+        updateCastleQuote(targetScrollProgress);
+      }
+
+      window.addEventListener('scroll', updateScrollMetrics, { passive: true });
+      window.addEventListener('resize', () => {
+        updateScrollMetrics();
+        handleWindowResize();
+      });
+
+      // Frase cinematográfica da Etapa 5
+      const quoteContainer = document.getElementById('castleQuoteWords');
+      const rawQuote = "Aquele que domina a si mesmo no campo de batalha interior já venceu mil guerras antes que a primeira lâmina seja erguida.";
+      let quoteWordEls = [];
+      if (quoteContainer) {
+        quoteContainer.innerHTML = '';
+        rawQuote.split(/\s+/).forEach((word, idx, arr) => {
+          const span = document.createElement('span');
+          span.className = 'quote-word';
+          span.textContent = word;
+          quoteContainer.appendChild(span);
+          quoteWordEls.push(span);
+          if (idx < arr.length - 1) {
+            quoteContainer.appendChild(document.createTextNode(' '));
+          }
+        });
+      }
+
+      function updateCastleQuote(progress) {
+        if (!quoteWordEls.length) return;
+        const stageStart = 0.58;
+        const stageEnd = 0.76;
+        if (progress < stageStart) {
+          quoteWordEls.forEach(el => el.classList.remove('lit'));
+        } else if (progress > stageEnd) {
+          quoteWordEls.forEach(el => el.classList.add('lit'));
+        } else {
+          const localT = (progress - stageStart) / (stageEnd - stageStart);
+          const wordsToLight = Math.floor(localT * quoteWordEls.length);
+          quoteWordEls.forEach((el, idx) => {
+            el.classList.toggle('lit', idx <= wordsToLight);
+          });
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+         4. SÍNTESE & GERENCIAMENTO DE ÁUDIO (MP3 Local + Web Audio API Procedural)
+         ------------------------------------------------------------------------ */
+      let audioCtx = null;
+      let isAudioPlaying = false;
+      let audioMode = 'synth'; // 'mp3' ou 'synth'
+      let htmlAudioEl = null;
+      let masterGain = null;
+      let windGain = null;
+      let melodyInterval = null;
+      let kotoInterval = null;
+      let bellInterval = null;
+      let audioCandidateChecked = false;
+
+      // Escala Pentatônica Tradicional Japonesa (Hirajoshi / Insen)
+      const HIRAJOSHI_SCALE = [
+        146.83, // D3
+        155.56, // Eb3
+        196.00, // G3
+        220.00, // A3
+        233.08, // Bb3
+        293.66, // D4
+        311.13, // Eb4
+        392.00, // G4
+        440.00, // A4
+        466.16, // Bb4
+        587.33, // D5
+        622.25  // Eb5
+      ];
+
+      // Tenta detectar arquivos de áudio locais caso o usuário adicione (samurai.mp3, trilha.mp3, etc.)
+      function tryDetectLocalAudio(onReady) {
+        if (audioCandidateChecked) {
+          if (onReady) onReady(htmlAudioEl !== null);
+          return;
+        }
+        audioCandidateChecked = true;
+        const candidates = ['./samurai.mp3', './trilha.mp3', './musica.mp3', './audio.mp3', './soundtrack.mp3'];
+        let idx = 0;
+
+        function checkNext() {
+          if (idx >= candidates.length) {
+            audioMode = 'synth';
+            if (onReady) onReady(false);
+            return;
+          }
+          const testAudio = new Audio();
+          testAudio.preload = 'auto';
+          testAudio.loop = true;
+          testAudio.volume = 0;
+
+          const onSuccess = () => {
+            cleanup();
+            htmlAudioEl = testAudio;
+            audioMode = 'mp3';
+            if (onReady) onReady(true);
+          };
+
+          const onError = () => {
+            cleanup();
+            idx++;
+            checkNext();
+          };
+
+          function cleanup() {
+            testAudio.removeEventListener('canplaythrough', onSuccess);
+            testAudio.removeEventListener('error', onError);
+          }
+
+          testAudio.addEventListener('canplaythrough', onSuccess, { once: true });
+          testAudio.addEventListener('error', onError, { once: true });
+          testAudio.src = candidates[idx];
+          testAudio.load();
+        }
+
+        checkNext();
+      }
+
+      function initWebAudio() {
+        if (audioCtx) return;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        audioCtx = new AudioContextClass();
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+
+        // 1. Vento das Montanhas e Bambuzal (Ruído Marrom com LFO lento)
+        const bufferSize = audioCtx.sampleRate * 2;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          output[i] = (lastOut + (0.02 * white)) / 1.02;
+          lastOut = output[i];
+          output[i] *= 3.5;
+        }
+
+        const windSource = audioCtx.createBufferSource();
+        windSource.buffer = noiseBuffer;
+        windSource.loop = true;
+
+        const windFilter = audioCtx.createBiquadFilter();
+        windFilter.type = 'lowpass';
+        windFilter.frequency.setValueAtTime(260, audioCtx.currentTime);
+
+        const windLfo = audioCtx.createOscillator();
+        windLfo.frequency.setValueAtTime(0.12, audioCtx.currentTime);
+        const windLfoGain = audioCtx.createGain();
+        windLfoGain.gain.setValueAtTime(140, audioCtx.currentTime);
+        windLfo.connect(windLfoGain);
+        windLfoGain.connect(windFilter.frequency);
+
+        windGain = audioCtx.createGain();
+        windGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+        windSource.connect(windFilter);
+        windFilter.connect(windGain);
+        windGain.connect(masterGain);
+
+        windSource.start();
+        windLfo.start();
+      }
+
+      // 2. Flauta Japonesa Shakuhachi (尺八) com Micro-inflexões e Vibrato Expressivo
+      function playShakuhachiNote(freq, duration = 3.5) {
+        if (!audioCtx || !isAudioPlaying) return;
+        const now = audioCtx.currentTime;
+
+        // Oscilador de tom
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        // Ataque com microtonal pitch-bend (típico da embocadura do bambu)
+        osc.frequency.setValueAtTime(freq * 0.965, now);
+        osc.frequency.exponentialRampToValueAtTime(freq, now + 0.35);
+
+        // LFO de vibrato sutil
+        const vib = audioCtx.createOscillator();
+        const vibGain = audioCtx.createGain();
+        vib.frequency.setValueAtTime(4.6, now);
+        vibGain.gain.setValueAtTime(0, now);
+        // Vibrato surge após a sustentação da nota
+        vibGain.gain.setValueAtTime(0, now + 0.6);
+        vibGain.gain.linearRampToValueAtTime(freq * 0.018, now + 1.4);
+        vib.connect(vibGain);
+        vibGain.connect(osc.frequency);
+
+        // Envelope de ganho com curva suave e natural
+        const noteGain = audioCtx.createGain();
+        noteGain.gain.setValueAtTime(0.0001, now);
+        noteGain.gain.linearRampToValueAtTime(0.045, now + 0.45);
+        noteGain.gain.exponentialRampToValueAtTime(0.035, now + duration * 0.6);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(noteGain);
+        noteGain.connect(masterGain);
+
+        vib.start(now);
+        osc.start(now);
+        vib.stop(now + duration + 0.1);
+        osc.stop(now + duration + 0.1);
+      }
+
+      // 3. Cordas Dedilhadas de Koto (琴)
+      function playKotoPluck(freq, delaySec = 0) {
+        if (!audioCtx || !isAudioPlaying) return;
+        const now = audioCtx.currentTime + delaySec;
+
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        osc1.type = 'triangle';
+        osc2.type = 'sine';
+
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 2, now); // harmônico de oitava
+
+        const noteGain = audioCtx.createGain();
+        noteGain.gain.setValueAtTime(0.0001, now);
+        noteGain.gain.linearRampToValueAtTime(0.045, now + 0.015);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+
+        osc1.connect(noteGain);
+        osc2.connect(noteGain);
+        noteGain.connect(masterGain);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 2.3);
+        osc2.stop(now + 2.3);
+      }
+
+      // 4. Sino de Templo / Tigela Tibetana Rin (磬)
+      function playRinBell(baseFreq = 216) {
+        if (!audioCtx || !isAudioPlaying) return;
+        const now = audioCtx.currentTime;
+        const partials = [
+          { mult: 1.0, gain: 0.06, decay: 7.5 },
+          { mult: 2.76, gain: 0.03, decay: 5.0 },
+          { mult: 4.12, gain: 0.015, decay: 3.5 }
+        ];
+
+        partials.forEach(p => {
+          const osc = audioCtx.createOscillator();
+          const pGain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(baseFreq * p.mult, now);
+
+          pGain.gain.setValueAtTime(0.0001, now);
+          pGain.gain.linearRampToValueAtTime(p.gain, now + 0.02);
+          pGain.gain.exponentialRampToValueAtTime(0.0001, now + p.decay);
+
+          osc.connect(pGain);
+          pGain.connect(masterGain);
+          osc.start(now);
+          osc.stop(now + p.decay + 0.1);
+        });
+      }
+
+      // Agendamento das frases musicais contemplativas
+      function startProceduralMelody() {
+        stopProceduralMelody();
+
+        // Toca sino inicial suave
+        playRinBell(220);
+
+        // Ciclo de Flauta Shakuhachi: frases poéticas a cada 8.5 segundos
+        const flutePhrases = [
+          [293.66, 311.13, 392.00],
+          [440.00, 392.00, 311.13, 293.66],
+          [587.33, 466.16, 440.00],
+          [311.13, 293.66, 220.00, 233.08, 293.66]
+        ];
+        let phraseIdx = 0;
+
+        melodyInterval = setInterval(() => {
+          if (!isAudioPlaying) return;
+          const phrase = flutePhrases[phraseIdx % flutePhrases.length];
+          phraseIdx++;
+          let noteDelay = 0;
+          phrase.forEach(freq => {
+            setTimeout(() => {
+              if (isAudioPlaying) playShakuhachiNote(freq, 2.4);
+            }, noteDelay * 1000);
+            noteDelay += 2.0;
+          });
+        }, 8500);
+
+        // Ciclo de Koto: dedilhados espaçados e serenos a cada 6.2 segundos
+        const kotoChords = [
+          [146.83, 220.00, 293.66],
+          [196.00, 233.08, 392.00],
+          [155.56, 220.00, 311.13]
+        ];
+        let kotoIdx = 0;
+
+        kotoInterval = setInterval(() => {
+          if (!isAudioPlaying) return;
+          const chord = kotoChords[kotoIdx % kotoChords.length];
+          kotoIdx++;
+          chord.forEach((freq, i) => {
+            playKotoPluck(freq, i * 0.28);
+          });
+        }, 6200);
+
+        // Sino de meditação a cada 24 segundos
+        bellInterval = setInterval(() => {
+          if (!isAudioPlaying) return;
+          playRinBell(196);
+        }, 24000);
+      }
+
+      function stopProceduralMelody() {
+        if (melodyInterval) { clearInterval(melodyInterval); melodyInterval = null; }
+        if (kotoInterval) { clearInterval(kotoInterval); kotoInterval = null; }
+        if (bellInterval) { clearInterval(bellInterval); bellInterval = null; }
+      }
+
+      function updateSoundUI(playing) {
+        const btnSound = document.getElementById('btnSoundToggle');
+        const icon = document.getElementById('soundIcon');
+        const text = document.getElementById('soundBtnText');
+
+        if (btnSound) {
+          btnSound.classList.toggle('playing', playing);
+          btnSound.setAttribute('aria-pressed', playing ? 'true' : 'false');
+          btnSound.setAttribute(
+            'title',
+            playing ? 'Pausar música ambiente' : 'Ativar música ambiente japonesa (Flauta Shakuhachi & Koto)'
+          );
+        }
+
+        if (text) {
+          text.textContent = playing ? 'Música: Ativa' : 'Música';
+        }
+
+        if (icon) {
+          if (playing) {
+            icon.innerHTML = `
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            `;
+          } else {
+            icon.innerHTML = `
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            `;
+          }
+        }
+      }
+
+      function startSoundtrack() {
+        if (isAudioPlaying) return;
+        isAudioPlaying = true;
+        updateSoundUI(true);
+
+        tryDetectLocalAudio((hasMp3) => {
+          if (hasMp3 && htmlAudioEl) {
+            htmlAudioEl.play().then(() => {
+              let vol = 0;
+              const fadeIn = setInterval(() => {
+                if (!isAudioPlaying) { clearInterval(fadeIn); return; }
+                vol = Math.min(vol + 0.05, 0.4);
+                htmlAudioEl.volume = vol;
+                if (vol >= 0.4) clearInterval(fadeIn);
+              }, 120);
+            }).catch(() => {
+              startWebAudioSynth();
+            });
+          } else {
+            startWebAudioSynth();
+          }
+        });
+      }
+
+      function startWebAudioSynth() {
+        initWebAudio();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+        masterGain.gain.exponentialRampToValueAtTime(1.0, audioCtx.currentTime + 1.2);
+        startProceduralMelody();
+      }
+
+      function pauseSoundtrack() {
+        if (!isAudioPlaying) return;
+        isAudioPlaying = false;
+        updateSoundUI(false);
+
+        if (htmlAudioEl) {
+          let vol = htmlAudioEl.volume;
+          const fadeOut = setInterval(() => {
+            vol = Math.max(vol - 0.08, 0);
+            htmlAudioEl.volume = vol;
+            if (vol <= 0) {
+              clearInterval(fadeOut);
+              htmlAudioEl.pause();
+            }
+          }, 80);
+        }
+
+        if (audioCtx && masterGain) {
+          masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+          masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+          masterGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+        }
+        stopProceduralMelody();
+      }
+
+      function toggleSoundtrack() {
+        if (isAudioPlaying) {
+          pauseSoundtrack();
+        } else {
+          startSoundtrack();
+        }
+      }
+
+      const btnSoundToggle = document.getElementById('btnSoundToggle');
+      if (btnSoundToggle) {
+        btnSoundToggle.addEventListener('click', toggleSoundtrack);
+      }
+
+      const btnStartJourney = document.getElementById('btnStartJourney');
+      if (btnStartJourney) {
+        btnStartJourney.addEventListener('click', () => {
+          playKatanaUnsheatheSound();
+          if (!isAudioPlaying) {
+            startSoundtrack();
+          }
+        });
+      }
+
+      // Desbloqueia o AudioContext na primeira interação do usuário (política do navegador)
+      const unlockAudioContext = () => {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        window.removeEventListener('click', unlockAudioContext);
+        window.removeEventListener('keydown', unlockAudioContext);
+        window.removeEventListener('touchstart', unlockAudioContext);
+      };
+      window.addEventListener('click', unlockAudioContext, { passive: true });
+      window.addEventListener('keydown', unlockAudioContext, { passive: true });
+      window.addEventListener('touchstart', unlockAudioContext, { passive: true });
+
+      function playKatanaUnsheatheSound() {
+        initWebAudio();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1400, now);
+        osc.frequency.exponentialRampToValueAtTime(3200, now + 0.15);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.55);
+      }
+
+      /* ------------------------------------------------------------------------
+         5. CURSOR PERSONALIZADO & INTERAÇÕES
+         ------------------------------------------------------------------------ */
+      const customCursor = document.getElementById('customCursor');
+      const cursorFollower = document.getElementById('cursorFollower');
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let followerX = mouseX;
+      let followerY = mouseY;
+
+      window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        if (customCursor) {
+          customCursor.style.left = `${mouseX}px`;
+          customCursor.style.top = `${mouseY}px`;
+          customCursor.style.opacity = '1';
+        }
+        if (cursorFollower) {
+          cursorFollower.style.opacity = '1';
+        }
+      });
+
+      document.addEventListener('mouseleave', () => {
+        if (customCursor) customCursor.style.opacity = '0';
+        if (cursorFollower) cursorFollower.style.opacity = '0';
+      });
+
+      function animateCursorFollower() {
+        followerX += (mouseX - followerX) * 0.18;
+        followerY += (mouseY - followerY) * 0.18;
+        if (cursorFollower) {
+          cursorFollower.style.left = `${followerX}px`;
+          cursorFollower.style.top = `${followerY}px`;
+        }
+        requestAnimationFrame(animateCursorFollower);
+      }
+      animateCursorFollower();
+
+      const interactiveElements = document.querySelectorAll('a, button, input, .hotspot-card, .virtue-item, .map-node');
+      interactiveElements.forEach(el => {
+        el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+        el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+      });
+
+      // Ondulação de tinta nos botões
+      document.querySelectorAll('.btn-ink').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          btn.style.setProperty('--ripple-x', `${x}px`);
+          btn.style.setProperty('--ripple-y', `${y}px`);
+        });
+      });
+
+      // Formulário do Clã
+      const clanForm = document.getElementById('clanForm');
+      const formStatus = document.getElementById('formStatus');
+      if (clanForm) {
+        clanForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const nameInput = document.getElementById('userName');
+          const emailInput = document.getElementById('userEmail');
+          if (nameInput.value.trim() && emailInput.value.trim()) {
+            if (formStatus) {
+              formStatus.innerHTML = `Sua jura foi aceita, <strong>${nameInput.value.trim()}</strong>. O código do clã foi enviado ao seu correio.`;
+              formStatus.classList.add('success');
+            }
+            playKatanaUnsheatheSound();
+            nameInput.value = '';
+            emailInput.value = '';
+          }
+        });
+      }
+
+      /* ------------------------------------------------------------------------
+         6. MOTOR 3D COM THREE.JS
+         ------------------------------------------------------------------------ */
+      let scene, camera, renderer;
+      let samuraiGroup, katanaSoloGroup;
+      let journeyCurve;
+      let cherryTreeGroup, toriiGateGroup, bambooPillarsGroup;
+      let castleGroup, distantSunMesh, waterMesh;
+      let petalsParticleSystem;
+      let floatingVirtuesGroup;
+      let backgroundHeroMesh = null;
+      let isWebGlSupported = true;
+      let swordDrawnTriggered = false;
+
+      // Suporte WebGL
+      function checkWebGLSupport() {
+        try {
+          const testCanvas = document.createElement('canvas');
+          return !!(window.WebGLRenderingContext && (testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl')));
+        } catch (e) {
+          return false;
+        }
+      }
+
+      if (!checkWebGLSupport() || typeof THREE === 'undefined') {
+        isWebGlSupported = false;
+        document.body.classList.add('fallback-active');
+        console.warn('WebGL indisponível. Ativando fallback em camadas CSS 3D.');
+      } else {
+        initThreeEngine();
+      }
+
+      function initThreeEngine() {
+        const canvas = document.getElementById('three-canvas');
+        if (!canvas) return;
+
+        // Cena
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(CONFIG.bgColor);
+        scene.fog = new THREE.FogExp2(CONFIG.bgColor, 0.016);
+
+        // Câmera
+        const aspect = window.innerWidth / window.innerHeight;
+        camera = new THREE.PerspectiveCamera(window.innerWidth < 768 ? 55 : 45, aspect, 0.1, 450);
+        camera.position.set(0, 3, 12);
+
+        // Renderizador
+        renderer = new THREE.WebGLRenderer({
+          canvas: canvas,
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Iluminação
+        const ambientLight = new THREE.AmbientLight(0xF4F1EC, 0.95);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.7);
+        dirLight.position.set(15, 30, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        const rimLight = new THREE.DirectionalLight(0xC1121F, 0.35);
+        rimLight.position.set(-15, 10, -30);
+        scene.add(rimLight);
+
+        // Construir curva do percurso
+        buildJourneyCurve();
+
+        // Carregar textura de fundo base ('./samurai.png')
+        setupBaseImageHeroPlane();
+
+        // Construir samurai procedural (e tentar GLTFLoader para samurai.glb se presente)
+        buildProceduralSamurai();
+        tryLoadExternalGLB();
+
+        // Construir cenários das etapas
+        buildStage1HeroLake();
+        buildStage2BambooForest();
+        buildStage3ToriiAndBridge();
+        buildStage4KatanaShrine();
+        buildStage5SunsetCastle();
+        buildStage6SacredDojo();
+
+        // Partículas 3D (pétalas vermelhas)
+        buildPetalsParticleSystem();
+
+        // Loop de animação
+        requestAnimationFrame(renderLoop);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.1 CURVA DO PERCURSO DO SAMURAI (CatmullRomCurve3)
+         ------------------------------------------------------------------------ */
+      function buildJourneyCurve() {
+        const points = [
+          new THREE.Vector3(0, 0, 0),         // Etapa 1: Margem do Lago (Hero)
+          new THREE.Vector3(2, 0.2, -18),     // Transição
+          new THREE.Vector3(-4, 0.4, -42),    // Etapa 2: Floresta de Bambu
+          new THREE.Vector3(-1, 0.8, -75),    // Transição da Ponte
+          new THREE.Vector3(3, 1.2, -105),    // Etapa 3: Portal Torii
+          new THREE.Vector3(6, 2.5, -145),    // Etapa 4: Escadaria & Katana
+          new THREE.Vector3(0, 4.0, -185),    // Etapa 5: Mirante do Castelo
+          new THREE.Vector3(-2, 4.5, -225),   // Etapa 6: Clareira do Dojo
+          new THREE.Vector3(-2, 4.5, -245)    // Etapa 7: Final
+        ];
+        journeyCurve = new THREE.CatmullRomCurve3(points);
+        journeyCurve.curveType = 'catmullrom';
+        journeyCurve.tension = 0.45;
+      }
+
+      /* ------------------------------------------------------------------------
+         6.2 HERO COM IMAGEM BASE './samurai.png' COMO PINTURA DE FUNDO
+         ------------------------------------------------------------------------ */
+      function setupBaseImageHeroPlane() {
+        const textureLoader = new THREE.TextureLoader();
+        
+        textureLoader.load(
+          './samurai.png',
+          function(texture) {
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+
+            const planeGeo = new THREE.PlaneGeometry(36, 20, 16, 16);
+            
+            // Shader para mesclar suavemente as bordas com a neblina off-white
+            const planeMat = new THREE.ShaderMaterial({
+              uniforms: {
+                uTexture: { value: texture },
+                uBgColor: { value: new THREE.Color(CONFIG.bgColor) }
+              },
+              vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                  vUv = uv;
+                  vec3 pos = position;
+                  pos.z -= pow(abs(uv.x - 0.5) * 2.0, 2.0) * 3.0;
+                  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                }
+              `,
+              fragmentShader: `
+                uniform sampler2D uTexture;
+                uniform vec3 uBgColor;
+                varying vec2 vUv;
+                void main() {
+                  vec4 tex = texture2D(uTexture, vUv);
+                  float edgeX = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
+                  float edgeY = smoothstep(0.0, 0.18, vUv.y) * smoothstep(1.0, 0.82, vUv.y);
+                  float edgeMask = edgeX * edgeY;
+                  vec3 finalColor = mix(uBgColor, tex.rgb, edgeMask * 0.88);
+                  gl_FragColor = vec4(finalColor, 1.0);
+                }
+              `,
+              side: THREE.DoubleSide
+            });
+
+            backgroundHeroMesh = new THREE.Mesh(planeGeo, planeMat);
+            backgroundHeroMesh.position.set(0, 4.5, -28);
+            scene.add(backgroundHeroMesh);
+          },
+          undefined,
+          function() {
+            console.info("Aviso de carregamento: './samurai.png' carregará perfeitamente quando servida via servidor local (npx serve / python -m http.server). Os elementos procedurais continuam ativos.");
+          }
+        );
+      }
+
+      /* ------------------------------------------------------------------------
+         6.3 CARREGAMENTO DINÂMICO DE 'samurai.glb' (Se Presente na Pasta)
+         ------------------------------------------------------------------------ */
+      function tryLoadExternalGLB() {
+        if (typeof THREE.GLTFLoader === 'undefined') return;
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          './samurai.glb',
+          function(gltf) {
+            if (samuraiGroup) scene.remove(samuraiGroup);
+            samuraiGroup = gltf.scene;
+            samuraiGroup.scale.set(1.2, 1.2, 1.2);
+            samuraiGroup.position.copy(journeyCurve.getPointAt(0));
+            scene.add(samuraiGroup);
+            console.log("Modelo 'samurai.glb' detectado e carregado com sucesso.");
+          },
+          undefined,
+          function() {
+            // Modelo .glb opcional ausente; samurai procedural mantido com perfeição
+          }
+        );
+      }
+
+      /* ------------------------------------------------------------------------
+         6.4 SAMURAI PROCEDURAL (LOW-POLY NANQUIM / TOON OUTLINE)
+         ------------------------------------------------------------------------ */
+      let samuraiParts = {
+        leftLeg: null,
+        rightLeg: null,
+        leftArm: null,
+        rightArm: null,
+        torso: null,
+        cape: null,
+        katanaSheathed: null,
+        katanaDrawn: null,
+        bladeFlash: null
+      };
+
+      function buildProceduralSamurai() {
+        samuraiGroup = new THREE.Group();
+
+        const inkBlackMat = new THREE.MeshToonMaterial({ color: 0x1A1A1A });
+        const inkDarkMat = new THREE.MeshToonMaterial({ color: 0x2E2C2A });
+        const vermilionMat = new THREE.MeshToonMaterial({ color: CONFIG.vermilion });
+        const steelMat = new THREE.MeshStandardMaterial({
+          color: 0xE8ECEF,
+          roughness: 0.15,
+          metalness: 0.95
+        });
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: CONFIG.gold,
+          roughness: 0.3,
+          metalness: 0.8
+        });
+
+        // Contorno preto estilo nanquim (Inverted Hull)
+        function createOutline(geom, scale = 1.06) {
+          const outlineMat = new THREE.MeshBasicMaterial({
+            color: 0x050505,
+            side: THREE.BackSide
+          });
+          const outlineMesh = new THREE.Mesh(geom, outlineMat);
+          outlineMesh.scale.set(scale, scale, scale);
+          return outlineMesh;
+        }
+
+        // 1. Pélvis e Faixa Obi
+        const pelvisGroup = new THREE.Group();
+        pelvisGroup.position.y = 1.35;
+        samuraiGroup.add(pelvisGroup);
+
+        const obiGeo = new THREE.CylinderGeometry(0.32, 0.35, 0.28, 8);
+        const obiMesh = new THREE.Mesh(obiGeo, vermilionMat);
+        obiMesh.add(createOutline(obiGeo, 1.08));
+        pelvisGroup.add(obiMesh);
+
+        // 2. Torso & Armadura Dou
+        const torsoGroup = new THREE.Group();
+        torsoGroup.position.y = 0.22;
+        pelvisGroup.add(torsoGroup);
+        samuraiParts.torso = torsoGroup;
+
+        const chestGeo = new THREE.CylinderGeometry(0.42, 0.32, 0.65, 8);
+        const chestMesh = new THREE.Mesh(chestGeo, inkDarkMat);
+        chestMesh.position.y = 0.32;
+        chestMesh.add(createOutline(chestGeo, 1.06));
+        torsoGroup.add(chestMesh);
+
+        // Ombreiras (Sode)
+        const sodeGeo = new THREE.BoxGeometry(0.18, 0.32, 0.45);
+        const leftSode = new THREE.Mesh(sodeGeo, inkBlackMat);
+        leftSode.position.set(-0.46, 0.48, 0);
+        leftSode.rotation.z = 0.25;
+        leftSode.add(createOutline(sodeGeo, 1.08));
+        torsoGroup.add(leftSode);
+
+        const rightSode = new THREE.Mesh(sodeGeo, inkBlackMat);
+        rightSode.position.set(0.46, 0.48, 0);
+        rightSode.rotation.z = -0.25;
+        rightSode.add(createOutline(sodeGeo, 1.08));
+        torsoGroup.add(rightSode);
+
+        // Cabeça & Chapéu Kasa
+        const headGroup = new THREE.Group();
+        headGroup.position.y = 0.75;
+        torsoGroup.add(headGroup);
+
+        const headGeo = new THREE.SphereGeometry(0.2, 8, 8);
+        const headMesh = new THREE.Mesh(headGeo, inkBlackMat);
+        headGroup.add(headMesh);
+
+        // Chapéu cônico Kasa
+        const kasaGeo = new THREE.ConeGeometry(0.72, 0.28, 12);
+        const kasaMesh = new THREE.Mesh(kasaGeo, inkDarkMat);
+        kasaMesh.position.y = 0.18;
+        kasaMesh.rotation.x = -0.05;
+        kasaMesh.add(createOutline(kasaGeo, 1.06));
+        headGroup.add(kasaMesh);
+
+        // Chonmage (coque)
+        const knotGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.12, 6);
+        const knotMesh = new THREE.Mesh(knotGeo, vermilionMat);
+        knotMesh.position.y = 0.34;
+        headGroup.add(knotMesh);
+
+        // Capa / Haori traseiro (balança com o vento)
+        const capeGeo = new THREE.PlaneGeometry(0.65, 1.1, 4, 6);
+        const capeMesh = new THREE.Mesh(capeGeo, new THREE.MeshToonMaterial({
+          color: 0x1A1A1A,
+          side: THREE.DoubleSide
+        }));
+        capeMesh.position.set(0, 0.25, -0.28);
+        capeMesh.rotation.x = 0.15;
+        torsoGroup.add(capeMesh);
+        samuraiParts.cape = capeMesh;
+
+        // 3. Braços
+        const armGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.65, 6);
+
+        // Braço Esquerdo
+        const leftArmGroup = new THREE.Group();
+        leftArmGroup.position.set(-0.46, 0.45, 0);
+        torsoGroup.add(leftArmGroup);
+        samuraiParts.leftArm = leftArmGroup;
+
+        const leftArmMesh = new THREE.Mesh(armGeo, inkBlackMat);
+        leftArmMesh.position.y = -0.3;
+        leftArmMesh.add(createOutline(armGeo, 1.08));
+        leftArmGroup.add(leftArmMesh);
+
+        // Braço Direito
+        const rightArmGroup = new THREE.Group();
+        rightArmGroup.position.set(0.46, 0.45, 0);
+        torsoGroup.add(rightArmGroup);
+        samuraiParts.rightArm = rightArmGroup;
+
+        const rightArmMesh = new THREE.Mesh(armGeo, inkBlackMat);
+        rightArmMesh.position.y = -0.3;
+        rightArmMesh.add(createOutline(armGeo, 1.08));
+        rightArmGroup.add(rightArmMesh);
+
+        // 4. Pernas & Hakama
+        const legGeo = new THREE.CylinderGeometry(0.16, 0.24, 0.88, 8);
+
+        // Perna Esquerda
+        const leftLegGroup = new THREE.Group();
+        leftLegGroup.position.set(-0.2, 0, 0);
+        pelvisGroup.add(leftLegGroup);
+        samuraiParts.leftLeg = leftLegGroup;
+
+        const leftLegMesh = new THREE.Mesh(legGeo, inkDarkMat);
+        leftLegMesh.position.y = -0.44;
+        leftLegMesh.add(createOutline(legGeo, 1.06));
+        leftLegGroup.add(leftLegMesh);
+
+        // Perna Direita
+        const rightLegGroup = new THREE.Group();
+        rightLegGroup.position.set(0.2, 0, 0);
+        pelvisGroup.add(rightLegGroup);
+        samuraiParts.rightLeg = rightLegGroup;
+
+        const rightLegMesh = new THREE.Mesh(legGeo, inkDarkMat);
+        rightLegMesh.position.y = -0.44;
+        rightLegMesh.add(createOutline(legGeo, 1.06));
+        rightLegGroup.add(rightLegMesh);
+
+        // 5. Katana na Cintura
+        const katanaSheathGroup = new THREE.Group();
+        katanaSheathGroup.position.set(0.28, 0.05, 0.08);
+        katanaSheathGroup.rotation.set(0.35, -0.2, -0.6);
+        pelvisGroup.add(katanaSheathGroup);
+        samuraiParts.katanaSheathed = katanaSheathGroup;
+
+        const sheathGeo = new THREE.CylinderGeometry(0.04, 0.03, 1.25, 6);
+        const sheathMesh = new THREE.Mesh(sheathGeo, inkBlackMat);
+        katanaSheathGroup.add(sheathMesh);
+
+        const guardGeo = new THREE.BoxGeometry(0.18, 0.03, 0.18);
+        const guardMesh = new THREE.Mesh(guardGeo, goldMat);
+        guardMesh.position.y = 0.62;
+        katanaSheathGroup.add(guardMesh);
+
+        const hiltGeo = new THREE.CylinderGeometry(0.038, 0.038, 0.38, 6);
+        const hiltMesh = new THREE.Mesh(hiltGeo, vermilionMat);
+        hiltMesh.position.y = 0.82;
+        katanaSheathGroup.add(hiltMesh);
+
+        // 6. Lâmina Desembainhada (Etapa 6)
+        const drawnBladeGroup = new THREE.Group();
+        drawnBladeGroup.position.set(0, -0.6, 0);
+        drawnBladeGroup.rotation.set(Math.PI / 2, 0, 0);
+        drawnBladeGroup.visible = false;
+        rightArmGroup.add(drawnBladeGroup);
+        samuraiParts.katanaDrawn = drawnBladeGroup;
+
+        const bladeGeo = new THREE.BoxGeometry(0.04, 1.15, 0.015);
+        const bladeMesh = new THREE.Mesh(bladeGeo, steelMat);
+        bladeMesh.position.y = 0.58;
+        drawnBladeGroup.add(bladeMesh);
+
+        const drawnHilt = new THREE.Mesh(hiltGeo, vermilionMat);
+        drawnHilt.position.y = -0.15;
+        drawnBladeGroup.add(drawnHilt);
+
+        // Brilho de aço no desembainhar
+        const flashGeo = new THREE.PlaneGeometry(0.6, 0.6);
+        const flashMat = new THREE.MeshBasicMaterial({
+          color: 0xFFFFFF,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending
+        });
+        const flashMesh = new THREE.Mesh(flashGeo, flashMat);
+        flashMesh.position.y = 0.58;
+        drawnBladeGroup.add(flashMesh);
+        samuraiParts.bladeFlash = flashMesh;
+
+        samuraiGroup.position.copy(journeyCurve.getPointAt(0));
+        scene.add(samuraiGroup);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.5 ETAPA 1: MARGEM DO LAGO (Cerejeira Vermelha, Água Ondulante, Rochas)
+         ------------------------------------------------------------------------ */
+      function buildStage1HeroLake() {
+        cherryTreeGroup = new THREE.Group();
+        cherryTreeGroup.position.set(-6, 0, -5);
+
+        const woodMat = new THREE.MeshToonMaterial({ color: 0x1A1A1A });
+        const redLeafMat = new THREE.MeshToonMaterial({ color: CONFIG.vermilion });
+        const darkLeafMat = new THREE.MeshToonMaterial({ color: CONFIG.vermilionDark });
+
+        // Tronco da cerejeira
+        const trunkGeo = new THREE.CylinderGeometry(0.4, 0.7, 5, 8);
+        const trunkMesh = new THREE.Mesh(trunkGeo, woodMat);
+        trunkMesh.position.y = 2.5;
+        trunkMesh.rotation.z = -0.12;
+        cherryTreeGroup.add(trunkMesh);
+
+        // Galhos
+        const branchGeo = new THREE.CylinderGeometry(0.18, 0.3, 3.5, 6);
+        const b1 = new THREE.Mesh(branchGeo, woodMat);
+        b1.position.set(1.2, 4.2, 0);
+        b1.rotation.z = -0.7;
+        cherryTreeGroup.add(b1);
+
+        const b2 = new THREE.Mesh(branchGeo, woodMat);
+        b2.position.set(-1.0, 3.8, 0.5);
+        b2.rotation.z = 0.8;
+        cherryTreeGroup.add(b2);
+
+        // Copas vermelhas
+        const folGeo = new THREE.DodecahedronGeometry(1.4, 1);
+        const fol1 = new THREE.Mesh(folGeo, redLeafMat);
+        fol1.position.set(2.8, 5.2, 0);
+        cherryTreeGroup.add(fol1);
+
+        const fol2 = new THREE.Mesh(folGeo, darkLeafMat);
+        fol2.position.set(1.5, 5.8, 1.2);
+        fol2.scale.set(1.3, 1.1, 1.3);
+        cherryTreeGroup.add(fol2);
+
+        const fol3 = new THREE.Mesh(folGeo, redLeafMat);
+        fol3.position.set(-1.8, 4.8, 0.8);
+        cherryTreeGroup.add(fol3);
+
+        scene.add(cherryTreeGroup);
+
+        // Lanterna de Pedra Tōrō
+        const lanternGroup = new THREE.Group();
+        lanternGroup.position.set(4.5, 0, -4);
+        
+        const baseLantern = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.7), woodMat);
+        baseLantern.position.y = 0.15;
+        lanternGroup.add(baseLantern);
+
+        const pillarLantern = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 1.2, 6), woodMat);
+        pillarLantern.position.y = 0.85;
+        lanternGroup.add(pillarLantern);
+
+        const lightBox = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.5), new THREE.MeshBasicMaterial({ color: 0xF7D070 }));
+        lightBox.position.y = 1.6;
+        lanternGroup.add(lightBox);
+
+        const roofLantern = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.35, 4), woodMat);
+        roofLantern.position.y = 2.0;
+        roofLantern.rotation.y = Math.PI / 4;
+        lanternGroup.add(roofLantern);
+
+        scene.add(lanternGroup);
+
+        // Lago ondulante
+        const waterGeo = new THREE.PlaneGeometry(80, 80, 32, 32);
+        waterGeo.rotateX(-Math.PI / 2);
+        const waterMat = new THREE.MeshStandardMaterial({
+          color: 0x222222,
+          roughness: 0.12,
+          metalness: 0.8,
+          transparent: true,
+          opacity: 0.85
+        });
+        waterMesh = new THREE.Mesh(waterGeo, waterMat);
+        waterMesh.position.set(0, -0.15, 0);
+        scene.add(waterMesh);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.6 ETAPA 2: FLORESTA DE BAMBU (Bambus Voando nas Laterais)
+         ------------------------------------------------------------------------ */
+      function buildStage2BambooForest() {
+        bambooPillarsGroup = new THREE.Group();
+        const bambooMat = new THREE.MeshToonMaterial({ color: 0x1E1E1E });
+        const bambooNodeMat = new THREE.MeshToonMaterial({ color: 0x333333 });
+
+        const count = CONFIG.bambooCount;
+        for (let i = 0; i < count; i++) {
+          const singleBamboo = new THREE.Group();
+          const height = 12 + Math.random() * 8;
+          const radius = 0.12 + Math.random() * 0.08;
+
+          const stalkGeo = new THREE.CylinderGeometry(radius, radius, height, 7);
+          const stalkMesh = new THREE.Mesh(stalkGeo, bambooMat);
+          stalkMesh.position.y = height / 2;
+          singleBamboo.add(stalkMesh);
+
+          // Anéis de nó
+          for (let y = 1.5; y < height; y += 1.8) {
+            const nodeGeo = new THREE.TorusGeometry(radius * 1.15, 0.03, 4, 8);
+            nodeGeo.rotateX(Math.PI / 2);
+            const nodeMesh = new THREE.Mesh(nodeGeo, bambooNodeMat);
+            nodeMesh.position.y = y;
+            singleBamboo.add(nodeMesh);
+          }
+
+          const side = Math.random() > 0.5 ? 1 : -1;
+          const offsetX = (side * (3.5 + Math.random() * 7));
+          const offsetZ = -30 - Math.random() * 35;
+          singleBamboo.position.set(offsetX, 0, offsetZ);
+
+          bambooPillarsGroup.add(singleBamboo);
+        }
+
+        scene.add(bambooPillarsGroup);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.7 ETAPA 3: PORTAL TORII VERMELHO, PONTE & 7 VIRTUDES 3D FLUTUANTES
+         ------------------------------------------------------------------------ */
+      function buildStage3ToriiAndBridge() {
+        toriiGateGroup = new THREE.Group();
+        toriiGateGroup.position.set(3, 0.8, -105);
+
+        const vermilionMat = new THREE.MeshToonMaterial({ color: CONFIG.vermilion });
+        const blackCapMat = new THREE.MeshToonMaterial({ color: 0x111111 });
+
+        // Pilares do Torii
+        const pillarGeo = new THREE.CylinderGeometry(0.42, 0.5, 9, 10);
+        const p1 = new THREE.Mesh(pillarGeo, vermilionMat);
+        p1.position.set(-3.2, 4.5, 0);
+        toriiGateGroup.add(p1);
+
+        const p2 = new THREE.Mesh(pillarGeo, vermilionMat);
+        p2.position.set(3.2, 4.5, 0);
+        toriiGateGroup.add(p2);
+
+        // Viga superior Kasagi
+        const kasagiGeo = new THREE.BoxGeometry(9.6, 0.65, 0.8);
+        const kasagiMesh = new THREE.Mesh(kasagiGeo, vermilionMat);
+        kasagiMesh.position.set(0, 8.8, 0);
+        toriiGateGroup.add(kasagiMesh);
+
+        // Capa preta
+        const capGeo = new THREE.BoxGeometry(10.0, 0.18, 0.95);
+        const capMesh = new THREE.Mesh(capGeo, blackCapMat);
+        capMesh.position.set(0, 9.2, 0);
+        toriiGateGroup.add(capMesh);
+
+        // Viga Nuki
+        const nukiGeo = new THREE.BoxGeometry(8.2, 0.45, 0.45);
+        const nukiMesh = new THREE.Mesh(nukiGeo, vermilionMat);
+        nukiMesh.position.set(0, 7.5, 0);
+        toriiGateGroup.add(nukiMesh);
+
+        // Placa Gakuzuka
+        const plaqueGeo = new THREE.BoxGeometry(0.7, 0.9, 0.2);
+        const plaqueMesh = new THREE.Mesh(plaqueGeo, blackCapMat);
+        plaqueMesh.position.set(0, 8.1, 0);
+        toriiGateGroup.add(plaqueMesh);
+
+        scene.add(toriiGateGroup);
+
+        // Ponte arqueada de madeira Taiko-bashi
+        const bridgeGroup = new THREE.Group();
+        bridgeGroup.position.set(-1, 0, -82);
+
+        const woodPlankMat = new THREE.MeshToonMaterial({ color: 0x242220 });
+        const bridgeArchGeo = new THREE.BoxGeometry(3.5, 0.35, 24);
+        const bridgeArch = new THREE.Mesh(bridgeArchGeo, woodPlankMat);
+        bridgeArch.position.y = 0.5;
+        bridgeGroup.add(bridgeArch);
+
+        const railGeo = new THREE.BoxGeometry(0.12, 0.8, 24);
+        const leftRail = new THREE.Mesh(railGeo, vermilionMat);
+        leftRail.position.set(-1.6, 1.0, 0);
+        bridgeGroup.add(leftRail);
+
+        const rightRail = new THREE.Mesh(railGeo, vermilionMat);
+        rightRail.position.set(1.6, 1.0, 0);
+        bridgeGroup.add(rightRail);
+
+        scene.add(bridgeGroup);
+
+        // 7 Ideogramas Flutuantes 3D ao longo do caminho da Ponte
+        floatingVirtuesGroup = new THREE.Group();
+        const kanjiList = ['義', '勇', '仁', '礼', '誠', '名', '忠'];
+        
+        kanjiList.forEach((kanjiChar, idx) => {
+          const virtueGroup = new THREE.Group();
+          
+          // Gerar textura procedural do Kanji no Canvas
+          const kCanvas = document.createElement('canvas');
+          kCanvas.width = 128;
+          kCanvas.height = 128;
+          const kCtx = kCanvas.getContext('2d');
+          kCtx.fillStyle = 'rgba(26, 26, 26, 0.95)';
+          kCtx.font = 'bold 88px "Shippori Mincho", serif';
+          kCtx.textAlign = 'center';
+          kCtx.textBaseline = 'middle';
+          kCtx.fillText(kanjiChar, 64, 64);
+
+          const kTex = new THREE.CanvasTexture(kCanvas);
+          const kPlaneGeo = new THREE.PlaneGeometry(1.2, 1.2);
+          const kPlaneMat = new THREE.MeshBasicMaterial({
+            map: kTex,
+            transparent: true,
+            side: THREE.DoubleSide
+          });
+          const kMesh = new THREE.Mesh(kPlaneGeo, kPlaneMat);
+          kMesh.position.y = 2.2;
+          virtueGroup.add(kMesh);
+
+          // Pedestal de pedra sumi-e
+          const pedGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 6);
+          const pedMesh = new THREE.Mesh(pedGeo, woodPlankMat);
+          pedMesh.position.y = 0.6;
+          virtueGroup.add(pedMesh);
+
+          // Alternar lados da ponte
+          const side = idx % 2 === 0 ? -2.6 : 2.6;
+          const zPos = -72 - (idx * 5.0);
+          virtueGroup.position.set(side, 0.4, zPos);
+
+          floatingVirtuesGroup.add(virtueGroup);
+        });
+
+        scene.add(floatingVirtuesGroup);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.8 ETAPA 4: A KATANA SAGRADA FLUTUANTE & ESCADARIA
+         ------------------------------------------------------------------------ */
+      function buildStage4KatanaShrine() {
+        katanaSoloGroup = new THREE.Group();
+        katanaSoloGroup.position.set(6, 4.5, -145);
+
+        const steelBladeMat = new THREE.MeshStandardMaterial({
+          color: 0xF0F4F8,
+          roughness: 0.12,
+          metalness: 0.98
+        });
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: CONFIG.gold,
+          roughness: 0.3,
+          metalness: 0.85
+        });
+        const urushiBlack = new THREE.MeshStandardMaterial({
+          color: 0x0A0A0A,
+          roughness: 0.2
+        });
+        const silkWrap = new THREE.MeshToonMaterial({ color: CONFIG.vermilion });
+
+        // Lâmina curvada
+        const bladeGeo = new THREE.BoxGeometry(0.06, 2.6, 0.02);
+        const bladeMesh = new THREE.Mesh(bladeGeo, steelBladeMat);
+        bladeMesh.position.y = 1.3;
+        katanaSoloGroup.add(bladeMesh);
+
+        // Linha Hamon
+        const hamonGeo = new THREE.PlaneGeometry(0.02, 2.5);
+        const hamonMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.65 });
+        const hamonMesh = new THREE.Mesh(hamonGeo, hamonMat);
+        hamonMesh.position.set(-0.02, 1.3, 0.012);
+        katanaSoloGroup.add(hamonMesh);
+
+        // Guarda Tsuba
+        const tsubaGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.04, 16);
+        const tsubaMesh = new THREE.Mesh(tsubaGeo, goldMat);
+        tsubaMesh.position.y = 0;
+        katanaSoloGroup.add(tsubaMesh);
+
+        // Empunhadura Tsuka
+        const tsukaGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.9, 8);
+        const tsukaMesh = new THREE.Mesh(tsukaGeo, silkWrap);
+        tsukaMesh.position.y = -0.45;
+        katanaSoloGroup.add(tsukaMesh);
+
+        // Bainha Saya
+        const sayaGeo = new THREE.CylinderGeometry(0.09, 0.07, 2.6, 8);
+        const sayaMesh = new THREE.Mesh(sayaGeo, urushiBlack);
+        sayaMesh.position.set(0.6, 1.2, 0);
+        katanaSoloGroup.add(sayaMesh);
+
+        // Altar de pedra
+        const pedestalGeo = new THREE.BoxGeometry(2.5, 0.4, 1.2);
+        const pedestal = new THREE.Mesh(pedestalGeo, new THREE.MeshToonMaterial({ color: 0x1A1A1A }));
+        pedestal.position.y = -1.2;
+        katanaSoloGroup.add(pedestal);
+
+        scene.add(katanaSoloGroup);
+
+        // Escadaria de pedra do templo (Ishidan) subindo de Z: -120 a -145
+        const stairGroup = new THREE.Group();
+        const stepMat = new THREE.MeshToonMaterial({ color: 0x2B2928 });
+        for (let s = 0; s < 12; s++) {
+          const stepGeo = new THREE.BoxGeometry(4.5, 0.22, 1.6);
+          const stepMesh = new THREE.Mesh(stepGeo, stepMat);
+          stepMesh.position.set(4 - s * 0.15, s * 0.22, -122 - s * 1.8);
+          stairGroup.add(stepMesh);
+        }
+        scene.add(stairGroup);
+
+        // Hotspots da Katana
+        document.querySelectorAll('.hotspot-card').forEach(card => {
+          card.addEventListener('click', () => {
+            document.querySelectorAll('.hotspot-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            const part = card.getAttribute('data-part');
+            focusKatanaPart(part);
+          });
+        });
+      }
+
+      function focusKatanaPart(part) {
+        if (!katanaSoloGroup) return;
+        switch (part) {
+          case 'tsuka':
+            katanaSoloGroup.rotation.set(0.4, 1.2, -0.3);
+            break;
+          case 'tsuba':
+            katanaSoloGroup.rotation.set(0, 0, Math.PI / 4);
+            break;
+          case 'saya':
+            katanaSoloGroup.rotation.set(0.2, -1.0, 0.2);
+            break;
+          case 'blade':
+          default:
+            katanaSoloGroup.rotation.set(0.1, 0.5, 0);
+            break;
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+         6.9 ETAPA 5: CASTELO AO ENTARDECER & SOL VERMELHO
+         ------------------------------------------------------------------------ */
+      function buildStage5SunsetCastle() {
+        castleGroup = new THREE.Group();
+        castleGroup.position.set(0, 3.5, -200);
+
+        const inkMat = new THREE.MeshToonMaterial({ color: 0x111111 });
+
+        // Sol vermelho colossal no poente
+        const sunGeo = new THREE.CircleGeometry(18, 32);
+        const sunMat = new THREE.MeshBasicMaterial({
+          color: CONFIG.vermilion,
+          side: THREE.DoubleSide
+        });
+        distantSunMesh = new THREE.Mesh(sunGeo, sunMat);
+        distantSunMesh.position.set(0, 15, -45);
+        castleGroup.add(distantSunMesh);
+
+        // Silhueta do castelo estilo Himeji
+        const wallGeo = new THREE.CylinderGeometry(8, 11, 4, 4);
+        wallGeo.rotateY(Math.PI / 4);
+        const wall = new THREE.Mesh(wallGeo, inkMat);
+        wall.position.y = 2;
+        castleGroup.add(wall);
+
+        const tower1Geo = new THREE.BoxGeometry(7, 3, 7);
+        const t1 = new THREE.Mesh(tower1Geo, inkMat);
+        t1.position.y = 5.5;
+        castleGroup.add(t1);
+
+        const roof1Geo = new THREE.ConeGeometry(6.2, 1.8, 4);
+        roof1Geo.rotateY(Math.PI / 4);
+        const r1 = new THREE.Mesh(roof1Geo, inkMat);
+        r1.position.y = 7.5;
+        castleGroup.add(r1);
+
+        const tower2Geo = new THREE.BoxGeometry(4.5, 2.5, 4.5);
+        const t2 = new THREE.Mesh(tower2Geo, inkMat);
+        t2.position.y = 9.2;
+        castleGroup.add(t2);
+
+        const roof2Geo = new THREE.ConeGeometry(4.2, 1.6, 4);
+        roof2Geo.rotateY(Math.PI / 4);
+        const r2 = new THREE.Mesh(roof2Geo, inkMat);
+        r2.position.y = 10.8;
+        castleGroup.add(r2);
+
+        scene.add(castleGroup);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.10 ETAPA 6: DOJO / CLAREIRA SAGRADA
+         ------------------------------------------------------------------------ */
+      function buildStage6SacredDojo() {
+        const dojoGroup = new THREE.Group();
+        dojoGroup.position.set(-2, 4.5, -225);
+
+        const inkMat = new THREE.MeshToonMaterial({ color: 0x1A1A1A });
+        const tatamiMat = new THREE.MeshToonMaterial({ color: 0xDCD7CD });
+
+        const platformGeo = new THREE.BoxGeometry(10, 0.4, 10);
+        const platform = new THREE.Mesh(platformGeo, inkMat);
+        platform.position.y = -0.2;
+        dojoGroup.add(platform);
+
+        const tatamiGeo = new THREE.BoxGeometry(8.5, 0.05, 8.5);
+        const tatami = new THREE.Mesh(tatamiGeo, tatamiMat);
+        tatami.position.y = 0.02;
+        dojoGroup.add(tatami);
+
+        const rockGeo = new THREE.DodecahedronGeometry(0.8, 0);
+        const rock = new THREE.Mesh(rockGeo, inkMat);
+        rock.position.set(4, 0.4, 2);
+        dojoGroup.add(rock);
+
+        scene.add(dojoGroup);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.11 PARTÍCULAS 3D: PÉTALAS VERMELHAS QUE DANÇAM NO VENTO
+         ------------------------------------------------------------------------ */
+      let petalPositions = [];
+      let petalVelocities = [];
+
+      function buildPetalsParticleSystem() {
+        const count = CONFIG.leafCount;
+        const geom = new THREE.BufferGeometry();
+        const posArray = new Float32Array(count * 3);
+
+        for (let i = 0; i < count; i++) {
+          const x = (Math.random() - 0.5) * 55;
+          const y = Math.random() * 22;
+          const z = -Math.random() * 255;
+
+          posArray[i * 3] = x;
+          posArray[i * 3 + 1] = y;
+          posArray[i * 3 + 2] = z;
+
+          petalPositions.push({ x, y, z });
+          petalVelocities.push({
+            vy: -0.018 - Math.random() * 0.03,
+            vx: (Math.random() - 0.5) * 0.02,
+            vz: -0.02 - Math.random() * 0.03
+          });
+        }
+
+        geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        // Textura procedural de pétala vermelha desenhada em canvas
+        const pCanvas = document.createElement('canvas');
+        pCanvas.width = 32;
+        pCanvas.height = 32;
+        const ctx = pCanvas.getContext('2d');
+        ctx.fillStyle = '#C1121F';
+        ctx.beginPath();
+        ctx.ellipse(16, 16, 12, 6, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        const petalTex = new THREE.CanvasTexture(pCanvas);
+
+        const pMat = new THREE.PointsMaterial({
+          size: window.innerWidth < 768 ? 0.45 : 0.68,
+          map: petalTex,
+          transparent: true,
+          opacity: 0.92,
+          depthWrite: false,
+          blending: THREE.NormalBlending
+        });
+
+        petalsParticleSystem = new THREE.Points(geom, pMat);
+        scene.add(petalsParticleSystem);
+      }
+
+      function updatePetals(time, speed) {
+        if (!petalsParticleSystem) return;
+        const pos = petalsParticleSystem.geometry.attributes.position.array;
+        const count = CONFIG.leafCount;
+        const mouseWindX = (mouseX / window.innerWidth - 0.5) * 0.04;
+
+        for (let i = 0; i < count; i++) {
+          const v = petalVelocities[i];
+          pos[i * 3 + 1] += v.vy;
+          pos[i * 3] += v.vx + Math.sin(time + i) * 0.015 + mouseWindX;
+          pos[i * 3 + 2] += v.vz - speed * 0.5;
+
+          if (pos[i * 3 + 1] < -0.5) {
+            pos[i * 3 + 1] = 18 + Math.random() * 4;
+            pos[i * 3] = (Math.random() - 0.5) * 50;
+          }
+        }
+        petalsParticleSystem.geometry.attributes.position.needsUpdate = true;
+      }
+
+      /* ------------------------------------------------------------------------
+         6.12 LOOP DE ANIMAÇÃO & CÂMERA DIRETORA
+         ------------------------------------------------------------------------ */
+      let clock = new THREE.Clock();
+
+      function renderLoop() {
+        requestAnimationFrame(renderLoop);
+
+        // Pausar o render se a aba estiver em segundo plano para máxima performance
+        if (document.hidden) return;
+
+        const elapsedTime = clock.getElapsedTime();
+
+        // Interpolação suave do scroll (Lerp)
+        currentScrollProgress += (targetScrollProgress - currentScrollProgress) * 0.065;
+        const walkingSpeed = Math.abs(targetScrollProgress - currentScrollProgress);
+
+        // 1. Posicionar Samurai ao longo da Curva
+        if (samuraiGroup && journeyCurve) {
+          const currentT = Math.min(Math.max(currentScrollProgress, 0.001), 0.999);
+          const samuraiPos = journeyCurve.getPointAt(currentT);
+          const tangent = journeyCurve.getTangentAt(currentT).normalize();
+
+          samuraiGroup.position.copy(samuraiPos);
+
+          // Orientação do corpo ao longo do percurso
+          const lookTarget = samuraiPos.clone().add(tangent);
+          samuraiGroup.lookAt(lookTarget);
+
+          // Ciclo de Caminhada Procedural
+          animateSamuraiProcedural(elapsedTime, walkingSpeed, currentScrollProgress, scrollDirection);
+        }
+
+        // 2. Transição Dinâmica de Neblina entre Etapas
+        modulateSceneFog(currentScrollProgress);
+
+        // 3. Câmera Diretora Dinâmica
+        updateDirectorCamera(currentScrollProgress, elapsedTime);
+
+        // 4. Animação dos Ideogramas Flutuantes da Etapa 3
+        if (floatingVirtuesGroup) {
+          floatingVirtuesGroup.children.forEach((virtue, idx) => {
+            virtue.position.y = 0.4 + Math.sin(elapsedTime * 2 + idx) * 0.08;
+            virtue.rotation.y = Math.sin(elapsedTime * 1.5 + idx) * 0.15;
+          });
+        }
+
+        // 5. Atualizar Pétalas e Ondulações
+        updatePetals(elapsedTime, walkingSpeed);
+
+        if (waterMesh) {
+          waterMesh.position.y = -0.15 + Math.sin(elapsedTime * 1.5) * 0.02;
+        }
+
+        // 6. Rotação da Katana (Etapa 4)
+        if (katanaSoloGroup) {
+          katanaSoloGroup.rotation.y = elapsedTime * 0.5 + currentScrollProgress * 8;
+          katanaSoloGroup.position.y = 4.5 + Math.sin(elapsedTime * 1.8) * 0.15;
+        }
+
+        // 7. Renderizar Cena
+        renderer.render(scene, camera);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.13 MODULAÇÃO DINÂMICA DA NEBLINA (Respiro entre Cenários)
+         ------------------------------------------------------------------------ */
+      function modulateSceneFog(progress) {
+        if (!scene || !scene.fog) return;
+        let targetDensity = 0.016;
+
+        if (progress < 0.18) {
+          // Etapa 1: Margem límpida
+          targetDensity = 0.014;
+        } else if (progress < 0.36) {
+          // Etapa 2: Floresta de bambu misteriosa
+          targetDensity = 0.022;
+        } else if (progress < 0.52) {
+          // Etapa 3: Ponte e Torii
+          targetDensity = 0.016;
+        } else if (progress < 0.70) {
+          // Etapa 4: Montanha e Escadaria (Neblina fica densa como pedido)
+          targetDensity = 0.028;
+        } else if (progress < 0.84) {
+          // Etapa 5: Castelo ao entardecer (Abre a vista para o sol poente)
+          targetDensity = 0.011;
+        } else {
+          // Etapa 6 & 7: Dojo e clareira
+          targetDensity = 0.017;
+        }
+
+        scene.fog.density += (targetDensity - scene.fog.density) * 0.05;
+      }
+
+      /* ------------------------------------------------------------------------
+         6.14 CICLO DE CAMINHADA & IDLE PROCEDURAL DO SAMURAI
+         ------------------------------------------------------------------------ */
+      function animateSamuraiProcedural(time, speed, progress, direction) {
+        const isWalking = speed > 0.0008;
+
+        if (isWalking) {
+          const strideFreq = 16.0;
+          const strideAngle = 0.55 * direction; // Inverte o ciclo ao rolar para trás
+
+          if (samuraiParts.leftLeg) samuraiParts.leftLeg.rotation.x = Math.sin(time * strideFreq) * strideAngle;
+          if (samuraiParts.rightLeg) samuraiParts.rightLeg.rotation.x = -Math.sin(time * strideFreq) * strideAngle;
+
+          if (samuraiParts.leftArm) samuraiParts.leftArm.rotation.x = -Math.sin(time * strideFreq) * (strideAngle * 0.7);
+          if (samuraiParts.rightArm && !swordDrawnTriggered) {
+            samuraiParts.rightArm.rotation.x = Math.sin(time * strideFreq) * (strideAngle * 0.7);
+          }
+
+          if (samuraiParts.torso) {
+            samuraiParts.torso.position.y = 0.22 + Math.abs(Math.sin(time * strideFreq)) * 0.05;
+          }
+
+          if (samuraiParts.cape) {
+            samuraiParts.cape.rotation.x = 0.35 + Math.sin(time * strideFreq * 0.5) * 0.15;
+          }
+        } else {
+          // Parado: Respiração sutil e capa ao vento
+          const breath = Math.sin(time * 1.6) * 0.025;
+
+          if (samuraiParts.leftLeg) samuraiParts.leftLeg.rotation.x = 0;
+          if (samuraiParts.rightLeg) samuraiParts.rightLeg.rotation.x = 0;
+          if (samuraiParts.leftArm) samuraiParts.leftArm.rotation.x = 0;
+
+          if (samuraiParts.torso) samuraiParts.torso.position.y = 0.22 + breath;
+          if (samuraiParts.cape) samuraiParts.cape.rotation.x = 0.15 + Math.sin(time * 2.2) * 0.06;
+        }
+
+        // Etapa 6: Dojo / O Samurai Desembainha a Katana
+        if (progress > 0.82 && progress < 0.98) {
+          if (!swordDrawnTriggered) {
+            swordDrawnTriggered = true;
+            playKatanaUnsheatheSound();
+            if (samuraiParts.katanaDrawn) samuraiParts.katanaDrawn.visible = true;
+            if (samuraiParts.katanaSheathed) samuraiParts.katanaSheathed.visible = false;
+          }
+          if (samuraiParts.rightArm) {
+            samuraiParts.rightArm.rotation.set(-0.8, -0.4, -0.5);
+          }
+          if (samuraiParts.bladeFlash) {
+            samuraiParts.bladeFlash.material.opacity = Math.max(0, 1 - (progress - 0.82) * 12);
+          }
+        } else if (progress <= 0.82) {
+          if (swordDrawnTriggered) {
+            swordDrawnTriggered = false;
+            if (samuraiParts.katanaDrawn) samuraiParts.katanaDrawn.visible = false;
+            if (samuraiParts.katanaSheathed) samuraiParts.katanaSheathed.visible = true;
+          }
+        }
+      }
+
+      /* ------------------------------------------------------------------------
+         6.15 CÂMERA DIRETORA CINEMATOGRÁFICA
+         ------------------------------------------------------------------------ */
+      function updateDirectorCamera(progress, time) {
+        if (!samuraiGroup) return;
+
+        const sPos = samuraiGroup.position;
+        let camOffset = new THREE.Vector3(0, 2.5, 8.5);
+        let lookOffset = new THREE.Vector3(0, 1.4, 0);
+
+        const mouseParallaxX = (mouseX / window.innerWidth - 0.5) * 1.2;
+        const mouseParallaxY = -(mouseY / window.innerHeight - 0.5) * 0.8;
+
+        if (progress < 0.16) {
+          // Etapa 1: Hero contemplativo à beira da água
+          camOffset.set(3.5 + mouseParallaxX, 2.2 + mouseParallaxY, 8.0);
+          lookOffset.set(-1.0, 1.2, -2.0);
+        } else if (progress < 0.34) {
+          // Etapa 2: Floresta de Bambu - Perseguição próxima com velocidade
+          camOffset.set(-1.2 + mouseParallaxX, 1.8, 5.5);
+          lookOffset.set(0, 1.2, -4.0);
+        } else if (progress < 0.52) {
+          // Etapa 3: Torii & Ponte - Contra-plongée dramático olhando o Torii
+          camOffset.set(2.8 + mouseParallaxX, 1.2, 6.5);
+          lookOffset.set(0, 3.2, -2.0);
+        } else if (progress < 0.70) {
+          // Etapa 4: Escadaria & Katana - Câmera sobe com a montanha e foca a espada
+          camOffset.set(-4.0 + mouseParallaxX, 3.2, 7.0);
+          lookOffset.set(2.5, 2.0, 0);
+        } else if (progress < 0.84) {
+          // Etapa 5: Castelo ao Entardecer - Grande angular contra-plongée com o Sol
+          camOffset.set(0 + mouseParallaxX, 2.0, 14.0);
+          lookOffset.set(0, 5.0, -15.0);
+        } else {
+          // Etapa 6 & 7: Dojo - Câmera frontal encarando o samurai desembainhado
+          camOffset.set(0 + mouseParallaxX, 1.8, -4.5);
+          lookOffset.set(0, 1.4, 0);
+        }
+
+        camOffset.y += Math.sin(time * 0.8) * 0.08;
+
+        const targetCamPos = sPos.clone().add(camOffset);
+        camera.position.lerp(targetCamPos, 0.08);
+
+        const targetLookAt = sPos.clone().add(lookOffset);
+        camera.lookAt(targetLookAt);
+      }
+
+      /* ------------------------------------------------------------------------
+         6.16 REDIMENSIONAMENTO DE JANELA
+         ------------------------------------------------------------------------ */
+      function handleWindowResize() {
+        if (!renderer || !camera) return;
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.fov = window.innerWidth < 768 ? 55 : 45;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+    })();
+  </script>
+</body>
+</html>
